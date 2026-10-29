@@ -1,0 +1,1332 @@
+<title>MachSense</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Telugu:wght@400;600;700&family=Noto+Sans+Malayalam:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&display=swap">
+<style>
+/* Layout: a product console. Slim app bar, two views (Live monitor / Savings), loom list · loom detail · alert feed in three columns */
+:root{
+  --bg:#f3f4f8; --surface:#ffffff; --surface-2:#f0f2f7; --ink:#101632; --ink-2:#5b6482; --ink-3:#8b93ad; --line:#e2e5ee;
+  --accent:#4655d4; --accent-2:#7a86ff; --accent-soft:#eceefe;
+  --ok:#17905a; --ok-soft:#e2f5ec; --warn:#c07a0c; --warn-soft:#fcf1dc; --crit:#d23f3a; --crit-soft:#fde7e5; --idle:#6c7390; --idle-soft:#eceef4;
+  --shadow:0 1px 2px rgba(16,22,50,.05),0 6px 20px rgba(16,22,50,.05);
+  --ui:"Plus Jakarta Sans","Noto Sans Tamil","Noto Sans Devanagari","Noto Sans Telugu","Noto Sans Malayalam","Noto Sans Kannada","Segoe UI",system-ui,sans-serif;
+  --num:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0a0e1b; --surface:#11172a; --surface-2:#171f36; --ink:#e8ebf6; --ink-2:#98a1bd; --ink-3:#6b7493; --line:#222b46;
+  --accent:#8f9bff; --accent-2:#b4bcff; --accent-soft:#1b2247;
+  --ok:#43c987; --ok-soft:#10291f; --warn:#f0b04b; --warn-soft:#2e2412; --crit:#ff7066; --crit-soft:#341719; --idle:#9aa2bd; --idle-soft:#1c2339;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a0e1b; --surface:#11172a; --surface-2:#171f36; --ink:#e8ebf6; --ink-2:#98a1bd; --ink-3:#6b7493; --line:#222b46;
+  --accent:#8f9bff; --accent-2:#b4bcff; --accent-soft:#1b2247;
+  --ok:#43c987; --ok-soft:#10291f; --warn:#f0b04b; --warn-soft:#2e2412; --crit:#ff7066; --crit-soft:#341719; --idle:#9aa2bd; --idle-soft:#1c2339;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+h1,h2,h3,h4{margin:0;line-height:1.2;text-wrap:balance}
+p{margin:0}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--num);font-variant-numeric:tabular-nums}
+.wrap{max-width:1360px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* app bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;align-items:center;gap:20px;min-height:62px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-2));position:relative;overflow:hidden;flex:none}
+.mark::before{content:"";position:absolute;inset:7px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.95) 0 2px,transparent 2px 5px);border-radius:2px}
+.mark::after{content:"";position:absolute;left:5px;right:5px;top:14px;height:2px;background:rgba(255,255,255,.95)}
+.logo b{font-weight:800;font-size:1.12rem;letter-spacing:-.01em}
+.logo small{display:block;font-size:.74rem;color:var(--ink-2);font-weight:500;margin-top:-2px}
+.tabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:10px;margin-left:auto}
+.tab{all:unset;cursor:pointer;padding:7px 14px;border-radius:7px;font-weight:600;font-size:.88rem;color:var(--ink-2)}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.tab:focus-visible{outline:2px solid var(--accent)}
+.simtag{display:inline-flex;align-items:center;gap:7px;font-size:.78rem;font-weight:600;color:var(--warn);background:var(--warn-soft);padding:5px 10px;border-radius:999px}
+.simtag i{width:7px;height:7px;border-radius:50%;background:var(--warn);animation:pulse 1.8s infinite}
+@keyframes pulse{50%{opacity:.35}}
+@media (max-width:720px){.tabs{margin-left:0;order:3;width:100%}.tab{flex:1;text-align:center}.bar .wrap{padding-block:10px;gap:10px}.simtag{margin-left:auto}}
+
+main{padding-block:22px 40px}
+.intro{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;margin-bottom:18px}
+.intro h1{font-size:1.45rem;font-weight:800;letter-spacing:-.015em}
+.intro p{color:var(--ink-2);font-size:.92rem;max-width:70ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);min-width:0}
+.label{font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px}
+.kpi{padding:14px 16px;display:grid;gap:4px}
+.kpi b{font-family:var(--num);font-size:1.55rem;font-weight:600;letter-spacing:-.02em}
+.kpi span{font-size:.8rem;color:var(--ink-2)}
+.kpi b.crit{color:var(--crit)}
+@media (max-width:1000px){.kpis{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:560px){.kpis{grid-template-columns:1fr 1fr}.kpi:last-child{grid-column:1/-1}}
+
+/* monitor grid */
+.grid{display:grid;grid-template-columns:270px minmax(0,1fr) 340px;gap:14px;align-items:start}
+@media (max-width:1180px){.grid{grid-template-columns:250px minmax(0,1fr)}.feed{grid-column:1/-1}}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+.panel-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.panel-h h2{font-size:.95rem;font-weight:700}
+
+.looms{display:grid;gap:8px;padding:10px}
+@media (max-width:760px){.looms{grid-template-columns:1fr 1fr}}
+@media (max-width:420px){.looms{grid-template-columns:1fr}}
+.loom{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:6px 8px;padding:10px 12px;border-radius:10px;border:1px solid transparent;background:var(--surface-2);transition:border-color .2s,background .2s}
+.loom:hover{border-color:var(--line)}
+.loom[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.loom:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.loom .nm{font-weight:700;font-size:.92rem}
+.loom canvas{grid-column:1/-1;width:100%;height:26px;display:block}
+.loom .mini{grid-column:1/-1;display:flex;justify-content:space-between;font-family:var(--num);font-size:.72rem;color:var(--ink-2)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:.7rem;font-weight:700;letter-spacing:.03em;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{color:var(--ok);background:var(--ok-soft)} .pill.warn{color:var(--warn);background:var(--warn-soft)}
+.pill.crit{color:var(--crit);background:var(--crit-soft)} .pill.idle{color:var(--idle);background:var(--idle-soft)}
+
+.detail{display:grid}
+.dhead{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.dhead h2{font-size:1.25rem;font-weight:800;letter-spacing:-.01em}
+.dhead .sub{color:var(--ink-2);font-size:.82rem;width:100%;margin-top:-6px}
+.dbody{display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:16px;padding:16px 18px}
+@media (max-width:560px){.dbody{grid-template-columns:1fr}}
+.charts{display:grid;gap:12px;min-width:0}
+.chart{min-width:0}
+.chart-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.chart-h b{font-size:.84rem;font-weight:600}
+.chart-h span{font-size:.74rem;color:var(--ink-3)}
+.chart canvas{display:block;width:100%;height:120px;border-radius:8px;background:var(--surface-2)}
+.side{display:grid;gap:10px;align-content:start}
+.ring{display:grid;place-items:center;position:relative;padding:4px 0}
+.ring svg{width:130px;height:130px;transform:rotate(-90deg)}
+.ring .track{fill:none;stroke:var(--surface-2);stroke-width:10}
+.ring .val{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .4s,stroke .4s}
+.ring .c{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring .c b{font-family:var(--num);font-size:1.6rem;font-weight:600}
+.ring .c span{font-size:.7rem;color:var(--ink-3);font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+.metric{display:flex;justify-content:space-between;align-items:baseline;padding:8px 10px;border-radius:8px;background:var(--surface-2)}
+.metric span{font-size:.78rem;color:var(--ink-2)}
+.metric b{font-family:var(--num);font-size:.95rem;font-weight:600}
+.metric b em{font-style:normal;color:var(--ink-3);font-size:.75rem;font-weight:400;margin-left:2px}
+.sim{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:14px 18px;border-top:1px solid var(--line);background:var(--surface-2);border-radius:0 0 14px 14px}
+.sim .label{margin-right:4px}
+.sbtn{all:unset;cursor:pointer;font-size:.82rem;font-weight:600;padding:7px 12px;border-radius:8px;background:var(--surface);border:1px solid var(--line);transition:border-color .2s,transform .1s}
+.sbtn:hover{border-color:var(--accent);color:var(--accent)}
+.sbtn:active{transform:translateY(1px)}
+.sbtn:focus-visible{outline:2px solid var(--accent)}
+.auto{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--ink-2)}
+.switch{appearance:none;width:34px;height:20px;border-radius:999px;background:var(--line);position:relative;cursor:pointer;transition:background .2s;margin:0}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--surface);transition:left .2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.switch:checked{background:var(--accent)} .switch:checked::after{left:16px}
+
+/* feed */
+.feed .list{list-style:none;margin:0;padding:8px;display:grid;gap:6px;max-height:640px;overflow:auto}
+.al{border-radius:10px;border:1px solid var(--line);background:var(--surface)}
+.al button.top{all:unset;box-sizing:border-box;cursor:pointer;width:100%;display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;padding:10px 12px;align-items:start}
+.al button.top:focus-visible{outline:2px solid var(--accent);border-radius:10px}
+.al .dot{width:9px;height:9px;border-radius:50%;margin-top:5px}
+.al.crit .dot{background:var(--crit)} .al.warn .dot{background:var(--warn)} .al.ok .dot{background:var(--ok)}
+.al .msg{font-size:.86rem;font-weight:600}
+.al .meta{grid-column:2;font-size:.74rem;color:var(--ink-3);font-family:var(--num)}
+.al .why{font-size:.74rem;font-weight:700;color:var(--accent);white-space:nowrap}
+.al .ev{padding:0 12px 12px 31px;display:grid;gap:8px}
+.al table{width:100%;border-collapse:collapse;font-size:.78rem}
+.al th{font-weight:600;color:var(--ink-3);text-align:left;padding:4px 6px;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em}
+.al td{padding:5px 6px;border-top:1px solid var(--line)}
+.al td.n{font-family:var(--num);text-align:right;white-space:nowrap}
+.al td.bad{color:var(--crit);font-weight:600}
+.al .verdict{font-size:.8rem;color:var(--ink-2);background:var(--surface-2);border-radius:8px;padding:8px 10px}
+.al .verdict b{color:var(--ink)}
+.al.open{border-color:var(--accent)}
+.feed .foot{padding:10px 16px;border-top:1px solid var(--line);font-size:.76rem;color:var(--ink-3)}
+
+/* savings */
+.sv{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:14px;align-items:start}
+@media (max-width:980px){.sv{grid-template-columns:1fr}}
+.inputs{padding:6px 18px 16px}
+.group{padding-block:12px;border-bottom:1px solid var(--line);display:grid;gap:12px}
+.group:last-child{border-bottom:none}
+.group h3{font-size:.8rem;font-weight:700;color:var(--ink-2);text-transform:uppercase;letter-spacing:.05em}
+.field{display:grid;grid-template-columns:1fr 110px;gap:4px 14px;align-items:center}
+.field label{font-size:.88rem;font-weight:500}
+.field small{grid-column:1;font-size:.74rem;color:var(--ink-3);margin-top:-4px}
+.field .in{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:0 8px;grid-row:span 2}
+.field .in input{all:unset;width:100%;font-family:var(--num);font-size:.92rem;padding:7px 0;text-align:right}
+.field .in span{font-size:.75rem;color:var(--ink-3);margin-left:6px;white-space:nowrap}
+.field .in:focus-within{border-color:var(--accent)}
+input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--accent);margin:0}
+.results{display:grid;gap:14px}
+.hero{padding:22px;background:linear-gradient(135deg,#2f3bb8,#5f6cf0);color:#fff;border:none;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-40px;top:-40px;width:220px;height:220px;border-radius:50%;background:repeating-linear-gradient(90deg,rgba(255,255,255,.08) 0 2px,transparent 2px 9px)}
+.hero .label{color:rgba(255,255,255,.8)}
+.hero .big{font-family:var(--num);font-size:clamp(2.2rem,5vw,3.1rem);font-weight:600;letter-spacing:-.03em;line-height:1.1;margin-top:4px}
+.hero .row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px;position:relative;z-index:1}
+.hero .row div{background:rgba(255,255,255,.14);border-radius:10px;padding:10px 12px}
+.hero .row b{display:block;font-family:var(--num);font-size:1.2rem;font-weight:600}
+.hero .row span{font-size:.74rem;color:rgba(255,255,255,.85)}
+@media (max-width:480px){.hero .row{grid-template-columns:1fr}}
+.brk{padding:16px 18px;display:grid;gap:14px}
+.brow{display:grid;grid-template-columns:120px 1fr 96px;gap:12px;align-items:center;font-size:.86rem}
+.brow .b{height:12px;border-radius:6px;background:var(--surface-2);overflow:hidden}
+.brow .b i{display:block;height:100%;border-radius:6px;transition:width .35s}
+.brow b{font-family:var(--num);text-align:right;font-weight:600}
+@media (max-width:420px){.brow{grid-template-columns:90px 1fr 84px}}
+.formula{padding:16px 18px;display:grid;gap:10px}
+.formula details{border-radius:10px;background:var(--surface-2);padding:10px 12px}
+.formula summary{cursor:pointer;font-weight:600;font-size:.86rem}
+.formula code{display:block;font-family:var(--num);font-size:.76rem;color:var(--ink-2);margin-top:8px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.note{font-size:.76rem;color:var(--ink-3);padding:0 18px 16px}
+.payback{padding:16px 18px}
+.pb-track{position:relative;height:36px;margin-top:10px}
+.pb-track canvas{width:100%;height:120px;display:block}
+footer{color:var(--ink-3);font-size:.78rem;padding-block:6px 30px}
+[hidden]{display:none!important}
+/* controls: theme + language */
+.ctrls{display:flex;align-items:center;gap:8px}
+.iconbtn{all:unset;box-sizing:border-box;cursor:pointer;width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);display:grid;place-items:center;color:var(--ink-2);transition:border-color .2s,color .2s}
+.iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+.iconbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.iconbtn svg{width:18px;height:18px}
+.iconbtn .moon{display:none}
+:root[data-theme="dark"] .iconbtn .sun{display:none} :root[data-theme="dark"] .iconbtn .moon{display:block}
+.langsel{position:relative;display:flex;align-items:center;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);padding-left:10px}
+.langsel:focus-within{border-color:var(--accent)}
+.langsel svg{width:16px;height:16px;flex:none}
+.langsel select{all:unset;cursor:pointer;font-size:.85rem;font-weight:600;color:var(--ink);padding:0 28px 0 8px;height:100%}
+.langsel::after{content:"";position:absolute;right:11px;top:50%;width:6px;height:6px;border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.langsel option{color:#101632;background:#fff}
+:root:not([lang="en"]) .label,:root:not([lang="en"]) .group h3,:root:not([lang="en"]) .ring .c span{letter-spacing:0;text-transform:none}
+.loom .pill{max-width:150px;white-space:normal;text-align:center;line-height:1.25}
+@media (max-width:720px){.ctrls{margin-left:auto}.simtag{margin-left:0}}
+/* history */
+.tag{display:inline-flex;font-size:.74rem;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.hcards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+@media (max-width:1000px){.hcards{grid-template-columns:1fr 1fr}}
+@media (max-width:440px){.hcards{grid-template-columns:1fr}}
+.hc{padding:14px 16px;display:grid;gap:4px}
+.hc b{font-family:var(--num);font-size:1.45rem;font-weight:600;letter-spacing:-.02em}
+.hc b.pos{color:var(--ok)} .hc b.neg{color:var(--crit)}
+.delta{font-family:var(--num);font-size:.78rem;font-weight:600;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.delta span{font-family:var(--ui);font-weight:500;color:var(--ink-3)}
+.up-good,.down-good{color:var(--ok)} .up-bad,.down-bad{color:var(--crit)} .neutral{color:var(--ink-2)}
+.ba{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-bottom:14px}
+.ba>div{padding:16px 18px;border-right:1px solid var(--line);display:grid;gap:8px;min-width:0}
+.ba>div:last-child{border-right:none}
+.ba .pair{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ba .pair em{font-style:normal;font-size:.72rem;color:var(--ink-3);display:block}
+.ba .pair b{font-family:var(--num);font-size:1.15rem;font-weight:600}
+.ba .arrow{color:var(--ink-3);font-size:1.1rem}
+.ba .after b{color:var(--ok)}
+@media (max-width:800px){.ba{grid-template-columns:1fr}.ba>div{border-right:none;border-bottom:1px solid var(--line)}.ba>div:last-child{border-bottom:none}}
+.hcharts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media (max-width:900px){.hcharts{grid-template-columns:1fr}}
+.hchart{padding:16px 18px}
+.hchart canvas{display:block;width:100%;height:210px;margin-top:6px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.74rem;color:var(--ink-2);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.cmp{margin-bottom:14px}
+.cmp-sel{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.cmp-sel select{font:600 .86rem var(--ui);color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.cmp-sel select:focus-visible{outline:2px solid var(--accent)}
+.tw{overflow-x:auto}
+.ht{width:100%;border-collapse:collapse;font-size:.84rem}
+.ht th{font-size:.72rem;font-weight:600;color:var(--ink-3);text-align:right;padding:10px 12px;background:var(--surface-2);white-space:nowrap}
+.ht th:first-child,.ht td:first-child{text-align:left}
+.ht td{padding:10px 12px;border-top:1px solid var(--line);text-align:right;font-family:var(--num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ht td:first-child{font-family:var(--ui);font-weight:600}
+.ht td.pos{color:var(--ok);font-weight:600} .ht td.neg{color:var(--crit);font-weight:600}
+.ht tr.inst td{background:var(--accent-soft)}
+.ht .mk{font-family:var(--ui);font-size:.66rem;font-weight:700;color:var(--accent);margin-left:6px}
+.all{min-width:980px}
+.hnote{font-size:.76rem;color:var(--ink-3);padding:12px 18px 16px}
+
+/* ---- polish ---- */
+.tab{display:inline-flex;align-items:center;gap:7px}
+.tab svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+@media (max-width:720px){.tab{flex-direction:column;gap:3px;font-size:.74rem;padding:7px 4px}}
+.intro{position:relative;overflow:hidden;padding:20px 22px;border-radius:16px;border:1px solid var(--line);background:linear-gradient(120deg,var(--accent-soft),var(--surface) 62%);box-shadow:var(--shadow)}
+.intro::after{content:"";position:absolute;right:-30px;top:-50%;width:300px;height:200%;transform:rotate(14deg);background:repeating-linear-gradient(90deg,color-mix(in srgb,var(--accent) 12%,transparent) 0 2px,transparent 2px 10px);pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 40%)}
+.intro>*{position:relative;z-index:1}
+.card{transition:box-shadow .25s,transform .25s}
+.kpi:hover,.hc:hover{transform:translateY(-2px)}
+section[role=tabpanel]:not([hidden]){animation:fadein .35s ease}
+@keyframes fadein{from{opacity:.001;transform:translateY(6px)}to{opacity:1;transform:none}}
+.kpi b,.hc b{background:linear-gradient(90deg,var(--ink),color-mix(in srgb,var(--ink) 70%,var(--accent)));-webkit-background-clip:text;background-clip:text;color:transparent}
+.kpi b.crit,.hc b.pos,.hc b.neg{-webkit-text-fill-color:currentColor;background:none}
+
+/* view switch */
+.vswitch{display:inline-flex;gap:4px;background:var(--surface);border:1px solid var(--line);padding:4px;border-radius:10px}
+.vswitch button{all:unset;cursor:pointer;padding:7px 14px;border-radius:7px;font-size:.84rem;font-weight:600;color:var(--ink-2)}
+.vswitch button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.vswitch button:focus-visible{outline:2px solid var(--accent)}
+
+/* weaver view */
+.weaver{display:grid;gap:14px}
+.wv-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 18px}
+.wv-bar p{color:var(--ink-2);font-size:.9rem}
+.voicenote{font-size:.8rem;color:var(--warn)}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:900px){.tiles{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:480px){.tiles{grid-template-columns:1fr}}
+.tile{padding:20px;display:grid;grid-template-columns:auto 1fr;gap:6px 18px;align-items:center;position:relative;overflow:hidden}
+.lamp{grid-row:span 3;width:78px;height:78px;border-radius:50%;position:relative;background:radial-gradient(circle at 35% 30%,#ffffffb0,transparent 42%),var(--lc);box-shadow:0 0 0 6px color-mix(in srgb,var(--lc) 18%,transparent),0 0 34px color-mix(in srgb,var(--lc) 55%,transparent)}
+.lamp.blink{animation:blink 1s infinite}
+@keyframes blink{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--lc) 10%,transparent),0 0 6px color-mix(in srgb,var(--lc) 20%,transparent);filter:brightness(.75)}}
+.tile .no{font-size:2.2rem;font-weight:800;letter-spacing:-.03em;line-height:1}
+.tile .tx{font-size:.95rem;font-weight:600}
+.tile .speakb{justify-self:start}
+.tile{cursor:pointer}.tile[aria-current="true"]{outline:2px solid var(--accent);outline-offset:-2px}
+.tile.crit{background:linear-gradient(140deg,var(--crit-soft),var(--surface) 70%)}
+.tile.warn{background:linear-gradient(140deg,var(--warn-soft),var(--surface) 70%)}
+
+/* listen */
+.how3{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-bottom:14px}
+.how3>div{padding:16px 18px;display:grid;grid-template-columns:auto 1fr;gap:2px 12px;align-items:center;border-right:1px solid var(--line)}
+.how3>div:last-child{border-right:none}
+.how3 .ic{grid-row:span 2;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-family:var(--num);font-weight:700}
+.how3 b{font-size:.9rem} .how3 span{font-size:.78rem;color:var(--ink-2)}
+@media (max-width:800px){.how3{grid-template-columns:1fr}.how3>div{border-right:none;border-bottom:1px solid var(--line)}.how3>div:last-child{border-bottom:none}}
+.lsbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+.lsbar .src{font-weight:700;font-size:.92rem;margin-right:auto;display:flex;align-items:center;gap:8px;min-width:0}
+.play{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:9px;background:var(--accent);color:var(--surface);font-weight:700;font-size:.86rem}
+.play:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.play svg{width:14px;height:14px;fill:currentColor}
+.upl{position:relative;overflow:hidden}
+.upl input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.lswave{padding:14px 18px;display:grid;gap:12px}
+.lswave canvas{display:block;width:100%;border-radius:10px;background:var(--surface-2)}
+#cWave{height:170px} #cRate{height:140px}
+.legend2{display:flex;gap:14px;flex-wrap:wrap;font-size:.74rem;color:var(--ink-2)}
+.legend2 i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.lsres{display:grid;grid-template-columns:repeat(3,1fr) 1.6fr;gap:12px;margin-top:14px}
+@media (max-width:900px){.lsres{grid-template-columns:1fr 1fr}}
+@media (max-width:440px){.lsres{grid-template-columns:1fr}}
+.lsres .hc b{font-size:1.35rem}
+.verdict-card{padding:14px 16px;display:grid;gap:6px;align-content:start}
+.verdict-card .vt{font-size:1rem;font-weight:700}
+.verdict-card.ok{background:linear-gradient(140deg,var(--ok-soft),var(--surface) 70%)}
+.verdict-card.bad{background:linear-gradient(140deg,var(--crit-soft),var(--surface) 70%)}
+.lsnote{font-size:.76rem;color:var(--ink-3);margin-top:10px}
+.err{color:var(--crit);font-size:.82rem}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="logo" href="#monitor"><span class="mark" aria-hidden="true"></span><span><b>MachSense</b><small data-i="tagline">Edge-AI monitoring for legacy power looms</small></span></a>
+    <div class="tabs" role="tablist" aria-label="Views">
+      <button class="tab" role="tab" id="t-monitor" aria-controls="v-monitor" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span data-i="tabMonitor">Live monitor</span></button>
+      <button class="tab" role="tab" id="t-listen" aria-controls="v-listen" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg><span data-i="tabListen">Listen</span></button>
+      <button class="tab" role="tab" id="t-savings" aria-controls="v-savings" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10M7 9h10M10 4c4 0 4 5 0 5H7l7 11"/></svg><span data-i="tabSavings">Savings calculator</span></button>
+      <button class="tab" role="tab" id="t-history" aria-controls="v-history" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span data-i="tabHistory">Monthly records</span></button>
+    </div>
+    <span class="simtag"><i></i><span data-i="sim">Simulated demo</span></span>
+    <div class="ctrls">
+      <label class="langsel" for="lang">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>
+        <select id="lang" aria-label="Language">
+          <option value="en">English</option>
+          <option value="ta">தமிழ்</option>
+          <option value="hi">हिन्दी</option>
+          <option value="te">తెలుగు</option>
+          <option value="ml">മലയാളം</option>
+          <option value="kn">ಕನ್ನಡ</option>
+        </select>
+      </label>
+      <button class="iconbtn" id="theme" type="button" aria-label="Switch theme">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="v-monitor" role="tabpanel" aria-labelledby="t-monitor">
+  <div class="intro">
+    <div>
+      <h1 data-i="shedTitle">Shed A · 6 looms</h1>
+      <p data-i="shedIntro"></p>
+    </div>
+    <div class="vswitch" role="group" aria-label="View">
+      <button id="vOwner" aria-pressed="true" data-i="viewOwner"></button>
+      <button id="vWeaver" aria-pressed="false" data-i="viewWeaver"></button>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="card kpi"><span class="label" data-i="k1"></span><b class="num" id="kRun">0/6</b><span data-i="k1s"></span></div>
+    <div class="card kpi"><span class="label" data-i="k2"></span><b class="num" id="kEff">0%</b><span data-i="k2s"></span></div>
+    <div class="card kpi"><span class="label" data-i="k3"></span><b class="num" id="kAl">0</b><span data-i="k3s"></span></div>
+    <div class="card kpi"><span class="label" data-i="k4"></span><b class="num" id="kFab">0.0 m</b><span data-i="k4s"></span></div>
+    <div class="card kpi"><span class="label" data-i="k5"></span><b class="num" id="kRs">₹0</b><span id="kKwh"></span></div>
+  </div>
+
+  <div class="weaver" id="weaver" hidden>
+    <div class="card wv-bar">
+      <div><p data-i="wvIntro"></p><p class="voicenote" id="voiceNote" hidden></p></div>
+      <label class="auto" for="autoSpeak" style="margin-left:0"><span data-i="autoSpeak"></span> <input type="checkbox" class="switch" id="autoSpeak"></label>
+      <div class="inject" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%"><span class="label" data-i="simOn"></span><b id="wvSel" class="num"></b>
+        <button class="sbtn" data-ev="thread" data-i="e_thread"></button><button class="sbtn" data-ev="overload" data-i="e_overload"></button><button class="sbtn" data-ev="heat" data-i="e_heat"></button><button class="sbtn" data-ev="bearing" data-i="e_bearing"></button><button class="sbtn" data-ev="idle" data-i="e_idle"></button></div>
+    </div>
+    <div class="tiles" id="tiles"></div>
+  </div>
+
+  <div class="grid" id="ownerGrid">
+    <div class="card">
+      <div class="panel-h"><h2 data-i="looms"></h2><span class="label num" id="clock">08:00</span></div>
+      <div class="looms" id="looms" role="group"></div>
+    </div>
+
+    <div class="card detail">
+      <div class="dhead">
+        <h2 id="dName"></h2><span class="pill ok" id="dPill"></span>
+        <p class="sub" id="dSub"></p>
+      </div>
+      <div class="dbody">
+        <div class="charts">
+          <div class="chart">
+            <div class="chart-h"><b data-i="vib"></b><span data-i="vibHint"></span></div>
+            <canvas id="cVib"></canvas>
+          </div>
+          <div class="chart">
+            <div class="chart-h"><b data-i="cur"></b><span data-i="curHint"></span></div>
+            <canvas id="cCur"></canvas>
+          </div>
+        </div>
+        <div class="side">
+          <div class="ring">
+            <svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="50"/><circle class="val" id="ringVal" cx="60" cy="60" r="50" stroke-dasharray="314.16" stroke-dashoffset="300"/></svg>
+            <div class="c"><b id="dScore">0.05</b><span data-i="anomaly"></span></div>
+          </div>
+          <div class="metric"><span data-i="m_ppm"></span><b class="num"><span id="dPpm">0</span><em>/min</em></b></div>
+          <div class="metric"><span data-i="m_cv"></span><b class="num"><span id="dCv">0</span><em>%</em></b></div>
+          <div class="metric"><span data-i="m_amp"></span><b class="num"><span id="dAmp">0</span><em>A</em></b></div>
+          <div class="metric"><span data-i="m_temp"></span><b class="num"><span id="dTemp">0</span><em>°C</em></b></div>
+          <div class="metric"><span data-i="m_rms"></span><b class="num"><span id="dRms">0</span><em>g</em></b></div>
+        </div>
+      </div>
+      <div class="sim">
+        <span class="label" data-i="simOn"></span>
+        <button class="sbtn" data-ev="thread" data-i="e_thread"></button>
+        <button class="sbtn" data-ev="overload" data-i="e_overload"></button>
+        <button class="sbtn" data-ev="heat" data-i="e_heat"></button>
+        <button class="sbtn" data-ev="bearing" data-i="e_bearing"></button>
+        <button class="sbtn" data-ev="idle" data-i="e_idle"></button>
+        <label class="auto" for="auto"><span data-i="auto"></span> <input type="checkbox" class="switch" id="auto" checked></label>
+      </div>
+    </div>
+
+    <div class="card feed">
+      <div class="panel-h"><h2 data-i="feedTitle"></h2><span class="label" data-i="tapWhy"></span></div>
+      <ul class="list" id="feed" aria-live="polite"></ul>
+      <p class="foot" data-i="feedFoot"></p>
+    </div>
+  </div>
+</section>
+
+<section id="v-listen" role="tabpanel" aria-labelledby="t-listen" hidden>
+  <div class="intro">
+    <div>
+      <h1 data-i="lsTitle"></h1>
+      <p data-i="lsIntro"></p>
+    </div>
+  </div>
+  <div class="card how3">
+    <div><span class="ic">1</span><b data-i="st1"></b><span data-i="st1s"></span></div>
+    <div><span class="ic">2</span><b data-i="st2"></b><span data-i="st2s"></span></div>
+    <div><span class="ic">3</span><b data-i="st3"></b><span data-i="st3s"></span></div>
+  </div>
+  <div class="card">
+    <div class="lsbar">
+      <span class="src"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg><span id="lsSrc"></span></span>
+      <button class="sbtn" id="lsSampleBtn" data-i="lsSample"></button>
+      <label class="sbtn upl" for="lsFile"><span data-i="lsUpload"></span><input type="file" id="lsFile" accept="audio/*"></label>
+      <button class="play" id="lsPlay"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="lsPlayIcon" d="M7 4l13 8-13 8z"/></svg><span id="lsPlayTxt"></span></button>
+    </div>
+    <p class="err" id="lsErr" hidden style="padding:10px 18px 0"></p>
+    <div class="lswave">
+      <div>
+        <div class="chart-h"><b data-i="lsWave"></b><span data-i="lsWaveHint"></span></div>
+        <canvas id="cWave" aria-label="Loom sound waveform"></canvas>
+        <div class="legend2" style="margin-top:8px"><span><i style="background:var(--accent)"></i><span data-i="lgPick"></span></span><span><i style="background:var(--crit)"></i><span data-i="lgBreak"></span></span><span><i style="background:var(--idle)"></i><span data-i="lgStop"></span></span></div>
+      </div>
+      <div>
+        <div class="chart-h"><b data-i="lsRate"></b><span data-i="lsRateHint"></span></div>
+        <canvas id="cRate" aria-label="Pick rate over time"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="lsres">
+    <div class="card hc"><span class="label" data-i="lsPicks"></span><b id="lsPicks">0</b></div>
+    <div class="card hc"><span class="label" data-i="lsAvg"></span><b id="lsAvg">0</b></div>
+    <div class="card hc"><span class="label" data-i="lsFirst"></span><b id="lsFirst">—</b></div>
+    <div class="card verdict-card" id="lsVcard"><span class="label" data-i="lsVerdict"></span><span class="vt" id="lsVerdict"></span></div>
+  </div>
+  <p class="lsnote"><span data-i="lsSampleNote"></span> <span data-i="lsFileNote"></span></p>
+</section>
+
+<section id="v-savings" role="tabpanel" aria-labelledby="t-savings" hidden>
+  <div class="intro">
+    <div>
+      <h1 data-i="svTitle"></h1>
+      <p data-i="svIntro"></p>
+    </div>
+    <button class="sbtn" id="reset" data-i="reset"></button>
+  </div>
+  <div class="sv">
+    <div class="card inputs" id="inputs"></div>
+    <div class="results">
+      <div class="card hero">
+        <span class="label" data-i="r_month"></span>
+        <div class="big" id="rMonth">₹0</div>
+        <div class="row">
+          <div><b id="rPay">0</b><span data-i="r_pay"></span></div>
+          <div><b id="rYear">₹0</b><span data-i="r_year"></span></div>
+          <div><b id="rLoom">₹0</b><span data-i="r_loom"></span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="panel-h"><h2 data-i="brkTitle"></h2><span class="label" data-i="perMonth"></span></div>
+        <div class="brk" id="brk"></div>
+      </div>
+      <div class="card payback">
+        <div class="chart-h"><b data-i="payTitle"></b><span data-i="payHint"></span></div>
+        <canvas id="cPay" style="width:100%;height:150px;display:block"></canvas>
+      </div>
+      <div class="card">
+        <div class="panel-h"><h2 data-i="calcTitle"></h2></div>
+        <div class="formula" id="formula"></div>
+        <p class="note" data-i="note"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="v-history" role="tabpanel" aria-labelledby="t-history" hidden>
+  <div class="intro">
+    <div>
+      <h1 data-i="hTitle"></h1>
+      <p id="hIntro"></p>
+    </div>
+    <span class="tag" data-i="sample"></span>
+  </div>
+
+  <div class="hcards" id="hcards"></div>
+
+  <div class="card ba" id="ba"></div>
+
+  <div class="hcharts">
+    <div class="card hchart">
+      <div class="chart-h"><b data-i="chProfit"></b><span data-i="chProfitHint"></span></div>
+      <canvas id="cPL" aria-label="Profit or loss by month"></canvas>
+    </div>
+    <div class="card hchart">
+      <div class="chart-h"><b data-i="chKwh"></b><span>kWh</span></div>
+      <canvas id="cKwh" aria-label="Electricity by month"></canvas>
+      <div class="legend"><span><i style="background:var(--accent)"></i><span data-i="lgUsed"></span></span><span><i style="background:var(--warn)"></i><span data-i="col_idle"></span></span></div>
+    </div>
+  </div>
+
+  <div class="card cmp">
+    <div class="panel-h"><h2 data-i="cmpTitle"></h2>
+      <div class="cmp-sel"><select id="mA" aria-label="First month"></select><span aria-hidden="true">⇄</span><select id="mB" aria-label="Second month"></select></div>
+    </div>
+    <div class="tw"><table class="ht" id="cmpT"></table></div>
+  </div>
+
+  <div class="card">
+    <div class="panel-h"><h2 data-i="tblTitle"></h2><button class="sbtn" id="copyT" data-i="copy"></button></div>
+    <div class="tw"><table class="ht all" id="allT"></table></div>
+    <p class="hnote" data-i="hNote"></p>
+  </div>
+</section>
+
+<footer data-i="footer"></footer>
+</main>
+
+<script>
+const I18N = {
+en:{tagline:"Edge-AI monitoring for legacy power looms",tabMonitor:"Live monitor",tabSavings:"Savings calculator",sim:"Simulated demo",toLight:"Switch to light mode",toDark:"Switch to dark mode",
+shedTitle:"Shed A · 6 looms",shedIntro:"What a loom owner sees with MachSense. Signals are simulated until the hardware is built. Pick a loom, trigger an event, then open the alert to see why MachSense raised it.",
+k1:"Weaving now",k1s:"looms running normally",k2:"Shed efficiency",k2s:"share of loom time weaving today",k3:"Open alerts",k3s:"need the owner's attention",k4:"Fabric protected",k4s:"faulty weaving avoided today",k5:"Idle power cost",k5s:"{kwh} kWh wasted today",
+looms:"Looms",loom:"Loom",loomSub:"Plain power loom · 3-phase 415 V · {hp} HP motor · normal {ppm} picks/min",vib:"Vibration",vibHint:"last 6 s · dashed line = this loom's normal peak",cur:"Motor current",curHint:"last 6 s · amps",anomaly:"Anomaly",
+m_ppm:"Pick rate",m_cv:"Rhythm variation",m_amp:"Current",m_temp:"Motor temp",m_rms:"Vibration RMS",simOn:"Simulate on this loom",e_thread:"Thread break",e_overload:"Yarn jam",e_heat:"Overheating",e_bearing:"Bearing wear",e_idle:"Leave idle",auto:"Random events",
+feedTitle:"Alerts to owner's phone",tapWhy:"Tap for why",why:"Why?",hide:"Hide",feedFoot:"Each alert says which loom, what happened and how urgent. \"Why?\" shows the readings MachSense compared.",th_read:"Reading",th_norm:"Normal",th_now:"Now",
+s_ok:"Weaving",s_idle:"Idle · power on",s_warn:"Wear warning",s_alert:"Alert",s_stop:"Stopped",
+a_thread:"Thread break likely. Check the warp.",a_threadOk:"Thread re-tied. Weaving again.",a_ovl:"Current spike: yarn jam or overload. Stop the loom.",a_ovlOk:"Jam cleared. Current normal.",a_heat:"Motor overheating. Check load and ventilation.",a_heatOk:"Motor cooled. Weaving resumed.",a_brg:"Vibration rising. Plan a bearing check this week.",a_brgOk:"Bearing replaced at shift change.",a_idle:"Idle 15 min with motor on. Switch off to save power.",a_idleOk:"Back to weaving.",
+v_thread:"Picks became irregular while the motor current stayed normal. That pattern means the weave is disturbed, not the motor: <b>thread break</b>.",
+v_ovl:"Current jumped far above this loom's normal within a second. A sudden rise like this means the motor is being forced: <b>jam or overload</b>.",
+v_heat:"Temperature passed 70 °C and is still climbing fast. Left running, the winding insulation can fail: <b>overheating</b>.",
+v_brg:"Vibration grew steadily while speed and current stayed normal. That points to a mechanical part wearing out: <b>bearing or reed wear</b>. Not urgent, but plan it.",
+v_idle:"No picks, yet current is still flowing. The motor is on while the loom does nothing: <b>wasted electricity</b>.",
+r_above:"Above normal",r_rise:"Rising at",r_idleT:"Idle time",r_wasted:"Power wasted",r_offA:"0 A when off",
+svTitle:"What MachSense saves a weaving unit",svIntro:"Enter your shed's numbers. The defaults are reasonable estimates for a small power-loom unit; change any of them to match a real shed.",reset:"Reset to defaults",
+g_shed:"Your shed",g_thread:"Thread breaks",g_elec:"Electricity",g_motor:"Motor breakdowns",
+f_looms:"Number of looms",f_days:"Working days per month",f_kit:"MachSense kit cost per loom",f_breaks:"Thread breaks per loom per day",f_tBefore:"Minutes before a break is noticed today",f_tAfter:"Minutes with a MachSense alert",f_ppm:"Loom speed",f_ppcm:"Weft density",h_ppcm:"How tightly the cloth is woven",f_loss:"Value lost per faulty metre",h_loss:"Faulty cloth sold as seconds or rewoven",f_idleH:"Hours idle with motor on, per loom per day",f_idleKw:"Power drawn while idle",f_cut:"Idle time cut by alerts",f_tariff:"Electricity rate",f_fails:"Breakdowns per loom per year",f_repair:"Repair cost + lost production per breakdown",f_prevent:"Breakdowns prevented by early warning",
+u_looms:"looms",u_days:"days",r_month:"Estimated saving per month",r_pay:"months to pay back the kits",r_year:"saved in the first year, after kit cost",r_loom:"saved per loom per month",
+brkTitle:"Where the saving comes from",perMonth:"per month",b_fab:"Fabric saved",b_fabS:"{m} m of faulty cloth avoided",b_rep:"Breakdowns avoided",b_repS:"{n} per year",b_en:"Idle power saved",
+payTitle:"Payback over 12 months",payHint:"cumulative saving minus kit cost",calcTitle:"How it is calculated",note:"Estimates only. Real figures will come from loom trials. Fabric speed = pick rate ÷ (weft density × 100) metres per minute.",
+x_speed:"fabric speed",x_metres:"metres saved",x_saving:"saving",x_energy:"energy",x_kit:"kit cost",x_payback:"payback",x_months:"months",x_perMonth:"per month",x_looms:"looms",x_breaks:"breaks",x_days:"days",x_perYear:"per year",x_prevented:"prevented",
+footer:"MachSense · student ECE project · concept stage, 2026 · all live data on this page is simulated"},
+
+ta:{tagline:"பழைய விசைத்தறிகளுக்கான எட்ஜ்-AI கண்காணிப்பு",tabMonitor:"நேரடி கண்காணிப்பு",tabSavings:"சேமிப்பு கணக்கீடு",sim:"மாதிரி டெமோ",toLight:"லைட் மோடுக்கு மாற்று",toDark:"டார்க் மோடுக்கு மாற்று",
+shedTitle:"கொட்டகை A · 6 தறிகள்",shedIntro:"MachSense மூலம் தறி உரிமையாளர் பார்ப்பது இதுதான். வன்பொருள் உருவாகும் வரை சிக்னல்கள் மாதிரித் தரவுகள். ஒரு தறியைத் தேர்ந்தெடுத்து, ஒரு நிகழ்வைத் தூண்டி, பிறகு எச்சரிக்கையைத் திறந்து MachSense ஏன் அதை அனுப்பியது என்று பாருங்கள்.",
+k1:"இப்போது நெய்கின்றன",k1s:"சீராக இயங்கும் தறிகள்",k2:"கொட்டகை திறன்",k2s:"இன்று நெசவில் இருந்த நேரத்தின் பங்கு",k3:"திறந்த எச்சரிக்கைகள்",k3s:"உரிமையாளரின் கவனம் தேவை",k4:"காப்பாற்றிய துணி",k4s:"இன்று தவிர்க்கப்பட்ட குறைபாடுள்ள நெசவு",k5:"சும்மா ஓடிய மின்செலவு",k5s:"இன்று {kwh} kWh வீணானது",
+looms:"தறிகள்",loom:"தறி",loomSub:"சாதாரண விசைத்தறி · 3-ஃபேஸ் 415 V · {hp} HP மோட்டார் · இயல்பு {ppm} பிக்ஸ்/நிமி",vib:"அதிர்வு",vibHint:"கடைசி 6 வி · புள்ளிக்கோடு = இந்தத் தறியின் இயல்பு உச்சம்",cur:"மோட்டார் மின்னோட்டம்",curHint:"கடைசி 6 வி · ஆம்பியர்",anomaly:"அசாதாரணம்",
+m_ppm:"பிக் வேகம்",m_cv:"தாள மாறுபாடு",m_amp:"மின்னோட்டம்",m_temp:"மோட்டார் வெப்பம்",m_rms:"அதிர்வு RMS",simOn:"இந்தத் தறியில் உருவகப்படுத்து",e_thread:"நூல் அறுதல்",e_overload:"நூல் சிக்கல்",e_heat:"அதிக வெப்பம்",e_bearing:"பேரிங் தேய்மானம்",e_idle:"சும்மா விடு",auto:"தானியங்கி நிகழ்வுகள்",
+feedTitle:"உரிமையாளர் போனுக்கு எச்சரிக்கைகள்",tapWhy:"காரணம் அறிய தட்டவும்",why:"ஏன்?",hide:"மறை",feedFoot:"ஒவ்வொரு எச்சரிக்கையும் எந்தத் தறி, என்ன நடந்தது, எவ்வளவு அவசரம் என்று சொல்லும். \"ஏன்?\" MachSense ஒப்பிட்ட அளவீடுகளைக் காட்டும்.",th_read:"அளவீடு",th_norm:"இயல்பு",th_now:"இப்போது",
+s_ok:"நெய்கிறது",s_idle:"சும்மா · மின்சாரம் ஆன்",s_warn:"தேய்மான எச்சரிக்கை",s_alert:"எச்சரிக்கை",s_stop:"நின்றது",
+a_thread:"நூல் அறுந்திருக்கலாம். பாவு நூலைச் சரிபாருங்கள்.",a_threadOk:"நூல் மீண்டும் கட்டப்பட்டது. நெசவு தொடர்கிறது.",a_ovl:"மின்னோட்டம் திடீர் உயர்வு: நூல் சிக்கல் அல்லது அதிக சுமை. தறியை நிறுத்துங்கள்.",a_ovlOk:"சிக்கல் நீக்கப்பட்டது. மின்னோட்டம் இயல்பு.",a_heat:"மோட்டார் அதிக வெப்பம். சுமையையும் காற்றோட்டத்தையும் சரிபாருங்கள்.",a_heatOk:"மோட்டார் குளிர்ந்தது. நெசவு தொடர்கிறது.",a_brg:"அதிர்வு அதிகரிக்கிறது. இந்த வாரம் பேரிங் சோதனை திட்டமிடுங்கள்.",a_brgOk:"ஷிஃப்ட் மாற்றத்தில் பேரிங் மாற்றப்பட்டது.",a_idle:"மோட்டார் ஆனில் 15 நிமிடம் சும்மா. மின்சாரம் சேமிக்க அணையுங்கள்.",a_idleOk:"மீண்டும் நெசவு.",
+v_thread:"மோட்டார் மின்னோட்டம் இயல்பாக இருந்தபோதே பிக்ஸ் ஒழுங்கற்றதாக மாறின. இது மோட்டார் அல்ல, நெசவு பாதிக்கப்பட்டதைக் காட்டுகிறது: <b>நூல் அறுதல்</b>.",
+v_ovl:"ஒரு வினாடிக்குள் மின்னோட்டம் இந்தத் தறியின் இயல்பை விட மிக அதிகமாக உயர்ந்தது. மோட்டார் வலுக்கட்டாயமாக இழுக்கப்படுகிறது: <b>சிக்கல் அல்லது அதிக சுமை</b>.",
+v_heat:"வெப்பம் 70 °C-ஐத் தாண்டி இன்னும் வேகமாக உயர்கிறது. தொடர்ந்து ஓடினால் வைண்டிங் பாதிக்கப்படலாம்: <b>அதிக வெப்பம்</b>.",
+v_brg:"வேகமும் மின்னோட்டமும் இயல்பாக இருக்க, அதிர்வு மெதுவாக உயர்ந்தது. ஒரு இயந்திர பாகம் தேய்வதைக் குறிக்கிறது: <b>பேரிங் அல்லது ரீட் தேய்மானம்</b>. அவசரம் இல்லை, ஆனால் திட்டமிடுங்கள்.",
+v_idle:"பிக்ஸ் இல்லை, ஆனாலும் மின்னோட்டம் ஓடுகிறது. தறி வேலை செய்யாதபோது மோட்டார் ஆனில் உள்ளது: <b>வீணான மின்சாரம்</b>.",
+r_above:"இயல்பை விட அதிகம்",r_rise:"உயர்வு வேகம்",r_idleT:"சும்மா நேரம்",r_wasted:"வீணான மின்சாரம்",r_offA:"அணைத்தால் 0 A",
+svTitle:"MachSense ஒரு நெசவு அலகுக்கு எவ்வளவு சேமிக்கும்",svIntro:"உங்கள் கொட்டகையின் எண்களை உள்ளிடுங்கள். இயல்புநிலை மதிப்புகள் ஒரு சிறிய விசைத்தறி அலகுக்கான மதிப்பீடுகள்; உண்மையான கொட்டகைக்கு ஏற்ப மாற்றுங்கள்.",reset:"இயல்புநிலைக்கு மீட்டமை",
+g_shed:"உங்கள் கொட்டகை",g_thread:"நூல் அறுதல்",g_elec:"மின்சாரம்",g_motor:"மோட்டார் பழுது",
+f_looms:"தறிகளின் எண்ணிக்கை",f_days:"மாதத்தில் வேலை நாட்கள்",f_kit:"ஒரு தறிக்கு MachSense கிட் விலை",f_breaks:"ஒரு தறிக்கு நாளொன்றுக்கு நூல் அறுதல்கள்",f_tBefore:"இப்போது அறுதல் கவனிக்கப்பட ஆகும் நிமிடங்கள்",f_tAfter:"MachSense எச்சரிக்கையுடன் நிமிடங்கள்",f_ppm:"தறி வேகம்",f_ppcm:"ஊடை அடர்த்தி",h_ppcm:"துணி எவ்வளவு நெருக்கமாக நெய்யப்படுகிறது",f_loss:"குறைபாடுள்ள ஒரு மீட்டருக்கு இழப்பு",h_loss:"குறைபாடுள்ள துணி செகண்ட்ஸாக விற்கப்படும் அல்லது மீண்டும் நெய்யப்படும்",f_idleH:"ஒரு தறி நாளொன்றுக்கு மோட்டார் ஆனில் சும்மா இருக்கும் மணி",f_idleKw:"சும்மா இருக்கும்போது மின் பயன்பாடு",f_cut:"எச்சரிக்கைகளால் குறையும் சும்மா நேரம்",f_tariff:"மின் கட்டணம்",f_fails:"ஒரு தறிக்கு ஆண்டுக்குப் பழுதுகள்",f_repair:"ஒரு பழுதுக்கு பழுதுநீக்கச் செலவு + உற்பத்தி இழப்பு",f_prevent:"முன்னெச்சரிக்கையால் தடுக்கப்படும் பழுதுகள்",
+u_looms:"தறிகள்",u_days:"நாட்கள்",r_month:"மாதாந்திர மதிப்பிடப்பட்ட சேமிப்பு",r_pay:"கிட் செலவு திரும்பப் பெற மாதங்கள்",r_year:"கிட் செலவு போக முதல் ஆண்டு சேமிப்பு",r_loom:"ஒரு தறிக்கு மாதச் சேமிப்பு",
+brkTitle:"சேமிப்பு எங்கிருந்து வருகிறது",perMonth:"மாதத்திற்கு",b_fab:"சேமித்த துணி",b_fabS:"{m} மீ குறைபாடுள்ள துணி தவிர்க்கப்பட்டது",b_rep:"தவிர்த்த பழுதுகள்",b_repS:"ஆண்டுக்கு {n}",b_en:"சேமித்த சும்மா மின்சாரம்",
+payTitle:"12 மாதங்களில் முதலீடு திரும்புதல்",payHint:"மொத்த சேமிப்பு கழித்தல் கிட் செலவு",calcTitle:"இது எப்படிக் கணக்கிடப்படுகிறது",note:"இவை மதிப்பீடுகள் மட்டுமே. உண்மையான எண்கள் தறி சோதனைகளிலிருந்து வரும். துணி வேகம் = பிக் வேகம் ÷ (ஊடை அடர்த்தி × 100) மீட்டர்/நிமி.",
+x_speed:"துணி வேகம்",x_metres:"சேமித்த மீட்டர்",x_saving:"சேமிப்பு",x_energy:"ஆற்றல்",x_kit:"கிட் செலவு",x_payback:"திரும்பப் பெறுதல்",x_months:"மாதங்கள்",x_perMonth:"மாதத்திற்கு",x_looms:"தறிகள்",x_breaks:"அறுதல்கள்",x_days:"நாட்கள்",x_perYear:"ஆண்டுக்கு",x_prevented:"தடுக்கப்பட்டது",
+footer:"MachSense · மாணவர் ECE திட்டம் · கருத்து நிலை, 2026 · இந்தப் பக்கத்தின் நேரடித் தரவு அனைத்தும் மாதிரி"},
+
+hi:{tagline:"पुराने पावरलूम के लिए एज-AI निगरानी",tabMonitor:"लाइव निगरानी",tabSavings:"बचत कैलकुलेटर",sim:"सिम्युलेटेड डेमो",toLight:"लाइट मोड पर जाएँ",toDark:"डार्क मोड पर जाएँ",
+shedTitle:"शेड A · 6 लूम",shedIntro:"MachSense के साथ लूम मालिक यही देखता है। हार्डवेयर बनने तक सिग्नल सिम्युलेटेड हैं। कोई लूम चुनें, कोई घटना चलाएँ, फिर अलर्ट खोलकर देखें कि MachSense ने उसे क्यों भेजा।",
+k1:"अभी बुनाई में",k1s:"सामान्य रूप से चल रहे लूम",k2:"शेड दक्षता",k2s:"आज बुनाई में बीते समय का हिस्सा",k3:"खुले अलर्ट",k3s:"मालिक का ध्यान चाहिए",k4:"बचाया गया कपड़ा",k4s:"आज टाली गई खराब बुनाई",k5:"खाली चलने की बिजली लागत",k5s:"आज {kwh} kWh बर्बाद",
+looms:"लूम",loom:"लूम",loomSub:"साधारण पावरलूम · 3-फेज़ 415 V · {hp} HP मोटर · सामान्य {ppm} पिक/मिनट",vib:"कंपन",vibHint:"पिछले 6 सेकंड · डैश लाइन = इस लूम का सामान्य शिखर",cur:"मोटर करंट",curHint:"पिछले 6 सेकंड · एम्पियर",anomaly:"असामान्यता",
+m_ppm:"पिक दर",m_cv:"लय में बदलाव",m_amp:"करंट",m_temp:"मोटर तापमान",m_rms:"कंपन RMS",simOn:"इस लूम पर सिम्युलेट करें",e_thread:"धागा टूटना",e_overload:"धागा फँसना",e_heat:"ज़्यादा गरम",e_bearing:"बेयरिंग घिसाव",e_idle:"खाली छोड़ें",auto:"अपने-आप घटनाएँ",
+feedTitle:"मालिक के फ़ोन पर अलर्ट",tapWhy:"कारण के लिए टैप करें",why:"क्यों?",hide:"छिपाएँ",feedFoot:"हर अलर्ट बताता है कि कौन-सा लूम, क्या हुआ और कितना ज़रूरी है। \"क्यों?\" वे रीडिंग दिखाता है जिनकी MachSense ने तुलना की।",th_read:"रीडिंग",th_norm:"सामान्य",th_now:"अभी",
+s_ok:"बुनाई जारी",s_idle:"खाली · बिजली चालू",s_warn:"घिसाव चेतावनी",s_alert:"अलर्ट",s_stop:"रुका हुआ",
+a_thread:"धागा टूटा हो सकता है। ताना जाँचें।",a_threadOk:"धागा फिर से जोड़ा गया। बुनाई फिर शुरू।",a_ovl:"करंट अचानक बढ़ा: धागा फँसा या ओवरलोड। लूम रोकें।",a_ovlOk:"फँसाव हटा। करंट सामान्य।",a_heat:"मोटर ज़्यादा गरम। लोड और हवा का रास्ता जाँचें।",a_heatOk:"मोटर ठंडी हुई। बुनाई फिर शुरू।",a_brg:"कंपन बढ़ रहा है। इस हफ़्ते बेयरिंग जाँच की योजना बनाएँ।",a_brgOk:"शिफ़्ट बदलते समय बेयरिंग बदली गई।",a_idle:"मोटर चालू रहते 15 मिनट से खाली। बिजली बचाने के लिए बंद करें।",a_idleOk:"बुनाई फिर शुरू।",
+v_thread:"मोटर करंट सामान्य रहते हुए पिक अनियमित हो गए। इसका मतलब मोटर नहीं, बुनाई में गड़बड़ है: <b>धागा टूटना</b>।",
+v_ovl:"एक सेकंड में करंट इस लूम के सामान्य से बहुत ऊपर चला गया। मोटर पर ज़ोर पड़ रहा है: <b>फँसाव या ओवरलोड</b>।",
+v_heat:"तापमान 70 °C पार कर गया और तेज़ी से बढ़ रहा है। चलता रहा तो वाइंडिंग खराब हो सकती है: <b>ज़्यादा गरम</b>।",
+v_brg:"गति और करंट सामान्य रहे, पर कंपन धीरे-धीरे बढ़ा। कोई मशीनी पुर्ज़ा घिस रहा है: <b>बेयरिंग या रीड घिसाव</b>। ज़रूरी नहीं, पर योजना बनाएँ।",
+v_idle:"कोई पिक नहीं, फिर भी करंट चल रहा है। लूम काम नहीं कर रहा पर मोटर चालू है: <b>बिजली की बर्बादी</b>।",
+r_above:"सामान्य से ऊपर",r_rise:"बढ़ने की दर",r_idleT:"खाली समय",r_wasted:"बर्बाद बिजली",r_offA:"बंद होने पर 0 A",
+svTitle:"MachSense एक बुनाई यूनिट की कितनी बचत करता है",svIntro:"अपने शेड के आँकड़े डालें। डिफ़ॉल्ट मान एक छोटी पावरलूम यूनिट के अनुमान हैं; असली शेड के अनुसार इन्हें बदलें।",reset:"डिफ़ॉल्ट पर लौटें",
+g_shed:"आपका शेड",g_thread:"धागा टूटना",g_elec:"बिजली",g_motor:"मोटर खराबी",
+f_looms:"लूम की संख्या",f_days:"महीने में काम के दिन",f_kit:"प्रति लूम MachSense किट की कीमत",f_breaks:"प्रति लूम प्रतिदिन धागा टूटना",f_tBefore:"अभी टूटा धागा दिखने में मिनट",f_tAfter:"MachSense अलर्ट के साथ मिनट",f_ppm:"लूम की गति",f_ppcm:"बाने का घनत्व",h_ppcm:"कपड़ा कितना घना बुना है",f_loss:"प्रति खराब मीटर नुकसान",h_loss:"खराब कपड़ा सेकंड्स में बिकता है या दोबारा बुना जाता है",f_idleH:"प्रति लूम प्रतिदिन मोटर चालू रहते खाली घंटे",f_idleKw:"खाली रहते बिजली खपत",f_cut:"अलर्ट से कम हुआ खाली समय",f_tariff:"बिजली दर",f_fails:"प्रति लूम प्रति वर्ष खराबियाँ",f_repair:"प्रति खराबी मरम्मत + उत्पादन नुकसान",f_prevent:"पहले चेतावनी से रोकी गई खराबियाँ",
+u_looms:"लूम",u_days:"दिन",r_month:"अनुमानित मासिक बचत",r_pay:"किट की लागत वसूलने में महीने",r_year:"किट लागत के बाद पहले साल की बचत",r_loom:"प्रति लूम प्रति माह बचत",
+brkTitle:"बचत कहाँ से आती है",perMonth:"प्रति माह",b_fab:"बचाया कपड़ा",b_fabS:"{m} मी खराब कपड़ा टला",b_rep:"टली खराबियाँ",b_repS:"{n} प्रति वर्ष",b_en:"बचाई खाली बिजली",
+payTitle:"12 महीनों में लागत वसूली",payHint:"कुल बचत घटा किट लागत",calcTitle:"यह कैसे गिना गया",note:"ये केवल अनुमान हैं। असली आँकड़े लूम परीक्षणों से आएँगे। कपड़े की गति = पिक दर ÷ (बाने का घनत्व × 100) मीटर/मिनट।",
+x_speed:"कपड़े की गति",x_metres:"बचाए मीटर",x_saving:"बचत",x_energy:"ऊर्जा",x_kit:"किट लागत",x_payback:"वसूली",x_months:"महीने",x_perMonth:"प्रति माह",x_looms:"लूम",x_breaks:"टूटन",x_days:"दिन",x_perYear:"प्रति वर्ष",x_prevented:"रोकी गई",
+footer:"MachSense · छात्र ECE प्रोजेक्ट · कॉन्सेप्ट चरण, 2026 · इस पेज का सारा लाइव डेटा सिम्युलेटेड है"},
+
+te:{tagline:"పాత పవర్‌లూమ్‌ల కోసం ఎడ్జ్-AI పర్యవేక్షణ",tabMonitor:"లైవ్ పర్యవేక్షణ",tabSavings:"పొదుపు లెక్కింపు",sim:"సిమ్యులేటెడ్ డెమో",toLight:"లైట్ మోడ్‌కు మారండి",toDark:"డార్క్ మోడ్‌కు మారండి",
+shedTitle:"షెడ్ A · 6 మగ్గాలు",shedIntro:"MachSense తో మగ్గం యజమాని చూసేది ఇదే. హార్డ్‌వేర్ తయారయ్యే వరకు సిగ్నల్స్ సిమ్యులేటెడ్. ఒక మగ్గాన్ని ఎంచుకుని, ఒక సంఘటనను ప్రారంభించి, ఆపై హెచ్చరికను తెరిచి MachSense దాన్ని ఎందుకు పంపిందో చూడండి.",
+k1:"ఇప్పుడు నేస్తున్నవి",k1s:"సాధారణంగా నడుస్తున్న మగ్గాలు",k2:"షెడ్ సామర్థ్యం",k2s:"ఈ రోజు నేతలో గడిచిన సమయ శాతం",k3:"తెరిచిన హెచ్చరికలు",k3s:"యజమాని దృష్టి అవసరం",k4:"కాపాడిన బట్ట",k4s:"ఈ రోజు నివారించిన లోపభూయిష్ట నేత",k5:"ఖాళీగా నడిచిన విద్యుత్ ఖర్చు",k5s:"ఈ రోజు {kwh} kWh వృథా",
+looms:"మగ్గాలు",loom:"మగ్గం",loomSub:"సాధారణ పవర్‌లూమ్ · 3-ఫేజ్ 415 V · {hp} HP మోటార్ · సాధారణం {ppm} పిక్స్/నిమి",vib:"కంపనం",vibHint:"చివరి 6 సె · చుక్కల గీత = ఈ మగ్గం సాధారణ శిఖరం",cur:"మోటార్ కరెంట్",curHint:"చివరి 6 సె · ఆంపియర్లు",anomaly:"అసాధారణత",
+m_ppm:"పిక్ రేటు",m_cv:"లయ మార్పు",m_amp:"కరెంట్",m_temp:"మోటార్ ఉష్ణోగ్రత",m_rms:"కంపనం RMS",simOn:"ఈ మగ్గంపై సిమ్యులేట్ చేయండి",e_thread:"దారం తెగడం",e_overload:"దారం ఇరుక్కోవడం",e_heat:"అధిక వేడి",e_bearing:"బేరింగ్ అరుగుదల",e_idle:"ఖాళీగా వదలండి",auto:"యాదృచ్ఛిక సంఘటనలు",
+feedTitle:"యజమాని ఫోన్‌కు హెచ్చరికలు",tapWhy:"కారణం కోసం ట్యాప్ చేయండి",why:"ఎందుకు?",hide:"దాచు",feedFoot:"ప్రతి హెచ్చరిక ఏ మగ్గం, ఏమి జరిగింది, ఎంత అత్యవసరం అని చెబుతుంది. \"ఎందుకు?\" MachSense పోల్చిన రీడింగ్‌లను చూపిస్తుంది.",th_read:"రీడింగ్",th_norm:"సాధారణం",th_now:"ఇప్పుడు",
+s_ok:"నేస్తోంది",s_idle:"ఖాళీ · పవర్ ఆన్",s_warn:"అరుగుదల హెచ్చరిక",s_alert:"హెచ్చరిక",s_stop:"ఆగింది",
+a_thread:"దారం తెగి ఉండవచ్చు. పడుగును తనిఖీ చేయండి.",a_threadOk:"దారం మళ్లీ కట్టారు. నేత మళ్లీ మొదలైంది.",a_ovl:"కరెంట్ ఒక్కసారిగా పెరిగింది: దారం ఇరుక్కుంది లేదా ఓవర్‌లోడ్. మగ్గాన్ని ఆపండి.",a_ovlOk:"ఇరుకు తొలగింది. కరెంట్ సాధారణం.",a_heat:"మోటార్ అధికంగా వేడెక్కింది. లోడ్ మరియు గాలి ప్రసరణను తనిఖీ చేయండి.",a_heatOk:"మోటార్ చల్లబడింది. నేత మళ్లీ మొదలైంది.",a_brg:"కంపనం పెరుగుతోంది. ఈ వారం బేరింగ్ తనిఖీ ప్లాన్ చేయండి.",a_brgOk:"షిఫ్ట్ మార్పులో బేరింగ్ మార్చారు.",a_idle:"మోటార్ ఆన్‌లో 15 నిమి ఖాళీగా ఉంది. విద్యుత్ ఆదా చేయడానికి ఆపండి.",a_idleOk:"మళ్లీ నేత మొదలైంది.",
+v_thread:"మోటార్ కరెంట్ సాధారణంగానే ఉండగా పిక్స్ క్రమం తప్పాయి. అంటే సమస్య మోటార్‌లో కాదు, నేతలో: <b>దారం తెగడం</b>.",
+v_ovl:"ఒక్క సెకనులో కరెంట్ ఈ మగ్గం సాధారణ స్థాయికి చాలా పైకి వెళ్లింది. మోటార్‌పై బలవంతపు భారం పడుతోంది: <b>ఇరుకు లేదా ఓవర్‌లోడ్</b>.",
+v_heat:"ఉష్ణోగ్రత 70 °C దాటి ఇంకా వేగంగా పెరుగుతోంది. ఇలాగే నడిస్తే వైండింగ్ పాడవవచ్చు: <b>అధిక వేడి</b>.",
+v_brg:"వేగం, కరెంట్ సాధారణంగా ఉండగా కంపనం నెమ్మదిగా పెరిగింది. ఏదో యంత్ర భాగం అరిగిపోతోంది: <b>బేరింగ్ లేదా రీడ్ అరుగుదల</b>. అత్యవసరం కాదు, కానీ ప్లాన్ చేయండి.",
+v_idle:"పిక్స్ లేవు, అయినా కరెంట్ ప్రవహిస్తోంది. మగ్గం పని చేయకుండానే మోటార్ ఆన్‌లో ఉంది: <b>వృథా విద్యుత్</b>.",
+r_above:"సాధారణం కంటే ఎక్కువ",r_rise:"పెరుగుదల వేగం",r_idleT:"ఖాళీ సమయం",r_wasted:"వృథా విద్యుత్",r_offA:"ఆపితే 0 A",
+svTitle:"MachSense ఒక నేత యూనిట్‌కు ఎంత ఆదా చేస్తుంది",svIntro:"మీ షెడ్ సంఖ్యలను నమోదు చేయండి. డిఫాల్ట్ విలువలు ఒక చిన్న పవర్‌లూమ్ యూనిట్‌కు అంచనాలు; నిజమైన షెడ్‌కు తగ్గట్టు మార్చండి.",reset:"డిఫాల్ట్‌కు రీసెట్",
+g_shed:"మీ షెడ్",g_thread:"దారం తెగడం",g_elec:"విద్యుత్",g_motor:"మోటార్ బ్రేక్‌డౌన్లు",
+f_looms:"మగ్గాల సంఖ్య",f_days:"నెలలో పని దినాలు",f_kit:"ఒక మగ్గానికి MachSense కిట్ ధర",f_breaks:"రోజుకు ఒక మగ్గంలో దారం తెగడాలు",f_tBefore:"ఇప్పుడు తెగడం గమనించడానికి పట్టే నిమిషాలు",f_tAfter:"MachSense హెచ్చరికతో నిమిషాలు",f_ppm:"మగ్గం వేగం",f_ppcm:"పేక సాంద్రత",h_ppcm:"బట్ట ఎంత దట్టంగా నేయబడింది",f_loss:"లోపమున్న ఒక మీటర్‌పై నష్టం",h_loss:"లోపమున్న బట్ట సెకండ్స్‌గా అమ్మబడుతుంది లేదా మళ్లీ నేయబడుతుంది",f_idleH:"రోజుకు ఒక మగ్గం మోటార్ ఆన్‌తో ఖాళీగా ఉండే గంటలు",f_idleKw:"ఖాళీగా ఉన్నప్పుడు విద్యుత్ వినియోగం",f_cut:"హెచ్చరికలతో తగ్గే ఖాళీ సమయం",f_tariff:"విద్యుత్ రేటు",f_fails:"సంవత్సరానికి ఒక మగ్గంలో బ్రేక్‌డౌన్లు",f_repair:"ఒక బ్రేక్‌డౌన్‌కు మరమ్మతు + ఉత్పత్తి నష్టం",f_prevent:"ముందస్తు హెచ్చరికతో నివారించిన బ్రేక్‌డౌన్లు",
+u_looms:"మగ్గాలు",u_days:"రోజులు",r_month:"నెలకు అంచనా పొదుపు",r_pay:"కిట్ ఖర్చు తిరిగి రావడానికి నెలలు",r_year:"కిట్ ఖర్చు పోగా మొదటి సంవత్సరం పొదుపు",r_loom:"ఒక మగ్గానికి నెలకు పొదుపు",
+brkTitle:"పొదుపు ఎక్కడి నుంచి వస్తుంది",perMonth:"నెలకు",b_fab:"కాపాడిన బట్ట",b_fabS:"{m} మీ లోపభూయిష్ట బట్ట నివారించబడింది",b_rep:"నివారించిన బ్రేక్‌డౌన్లు",b_repS:"సంవత్సరానికి {n}",b_en:"ఆదా అయిన ఖాళీ విద్యుత్",
+payTitle:"12 నెలల్లో పెట్టుబడి తిరిగి రావడం",payHint:"మొత్తం పొదుపు మైనస్ కిట్ ఖర్చు",calcTitle:"ఇది ఎలా లెక్కించబడింది",note:"ఇవి అంచనాలు మాత్రమే. నిజమైన సంఖ్యలు మగ్గం పరీక్షల నుంచి వస్తాయి. బట్ట వేగం = పిక్ రేటు ÷ (పేక సాంద్రత × 100) మీటర్లు/నిమి.",
+x_speed:"బట్ట వేగం",x_metres:"ఆదా అయిన మీటర్లు",x_saving:"పొదుపు",x_energy:"శక్తి",x_kit:"కిట్ ఖర్చు",x_payback:"తిరిగి రావడం",x_months:"నెలలు",x_perMonth:"నెలకు",x_looms:"మగ్గాలు",x_breaks:"తెగడాలు",x_days:"రోజులు",x_perYear:"సంవత్సరానికి",x_prevented:"నివారించబడినవి",
+footer:"MachSense · విద్యార్థి ECE ప్రాజెక్ట్ · కాన్సెప్ట్ దశ, 2026 · ఈ పేజీలోని లైవ్ డేటా అంతా సిమ్యులేటెడ్"},
+
+ml:{tagline:"പഴയ പവർലൂമുകൾക്കുള്ള എഡ്ജ്-AI നിരീക്ഷണം",tabMonitor:"തത്സമയ നിരീക്ഷണം",tabSavings:"ലാഭ കണക്കുകൂട്ടൽ",sim:"സിമുലേറ്റഡ് ഡെമോ",toLight:"ലൈറ്റ് മോഡിലേക്ക് മാറുക",toDark:"ഡാർക്ക് മോഡിലേക്ക് മാറുക",
+shedTitle:"ഷെഡ് A · 6 തറികൾ",shedIntro:"MachSense ഉപയോഗിച്ച് തറി ഉടമ കാണുന്നത് ഇതാണ്. ഹാർഡ്‌വെയർ തയ്യാറാകുന്നതുവരെ സിഗ്നലുകൾ സിമുലേറ്റഡ് ആണ്. ഒരു തറി തിരഞ്ഞെടുത്ത്, ഒരു സംഭവം ആരംഭിച്ച്, മുന്നറിയിപ്പ് തുറന്ന് MachSense അത് എന്തുകൊണ്ട് അയച്ചു എന്ന് കാണുക.",
+k1:"ഇപ്പോൾ നെയ്യുന്നവ",k1s:"സാധാരണ പ്രവർത്തിക്കുന്ന തറികൾ",k2:"ഷെഡ് കാര്യക്ഷമത",k2s:"ഇന്ന് നെയ്ത്തിൽ ചെലവഴിച്ച സമയത്തിന്റെ പങ്ക്",k3:"തുറന്ന മുന്നറിയിപ്പുകൾ",k3s:"ഉടമയുടെ ശ്രദ്ധ വേണം",k4:"സംരക്ഷിച്ച തുണി",k4s:"ഇന്ന് ഒഴിവാക്കിയ കേടായ നെയ്ത്ത്",k5:"വെറുതെ ഓടിയ വൈദ്യുതി ചെലവ്",k5s:"ഇന്ന് {kwh} kWh പാഴായി",
+looms:"തറികൾ",loom:"തറി",loomSub:"സാധാരണ പവർലൂം · 3-ഫേസ് 415 V · {hp} HP മോട്ടോർ · സാധാരണ {ppm} പിക്കുകൾ/മിനി",vib:"കമ്പനം",vibHint:"അവസാന 6 സെ · കുത്തുവര = ഈ തറിയുടെ സാധാരണ പരമാവധി",cur:"മോട്ടോർ കറന്റ്",curHint:"അവസാന 6 സെ · ആമ്പിയർ",anomaly:"അസാധാരണത",
+m_ppm:"പിക്ക് നിരക്ക്",m_cv:"താള വ്യതിയാനം",m_amp:"കറന്റ്",m_temp:"മോട്ടോർ താപനില",m_rms:"കമ്പനം RMS",simOn:"ഈ തറിയിൽ സിമുലേറ്റ് ചെയ്യുക",e_thread:"നൂൽ പൊട്ടൽ",e_overload:"നൂൽ കുരുങ്ങൽ",e_heat:"അമിത ചൂട്",e_bearing:"ബെയറിംഗ് തേയ്മാനം",e_idle:"വെറുതെ ഇടുക",auto:"ക്രമരഹിത സംഭവങ്ങൾ",
+feedTitle:"ഉടമയുടെ ഫോണിലേക്കുള്ള മുന്നറിയിപ്പുകൾ",tapWhy:"കാരണത്തിന് ടാപ്പ് ചെയ്യുക",why:"എന്തുകൊണ്ട്?",hide:"മറയ്ക്കുക",feedFoot:"ഓരോ മുന്നറിയിപ്പും ഏത് തറി, എന്ത് സംഭവിച്ചു, എത്ര അടിയന്തരം എന്ന് പറയുന്നു. \"എന്തുകൊണ്ട്?\" MachSense താരതമ്യം ചെയ്ത റീഡിംഗുകൾ കാണിക്കുന്നു.",th_read:"റീഡിംഗ്",th_norm:"സാധാരണ",th_now:"ഇപ്പോൾ",
+s_ok:"നെയ്യുന്നു",s_idle:"വെറുതെ · പവർ ഓൺ",s_warn:"തേയ്മാന മുന്നറിയിപ്പ്",s_alert:"മുന്നറിയിപ്പ്",s_stop:"നിർത്തി",
+a_thread:"നൂൽ പൊട്ടിയിരിക്കാം. പാവ് പരിശോധിക്കുക.",a_threadOk:"നൂൽ വീണ്ടും കെട്ടി. നെയ്ത്ത് തുടരുന്നു.",a_ovl:"കറന്റ് പെട്ടെന്ന് ഉയർന്നു: നൂൽ കുരുങ്ങി അല്ലെങ്കിൽ ഓവർലോഡ്. തറി നിർത്തുക.",a_ovlOk:"കുരുക്ക് മാറ്റി. കറന്റ് സാധാരണ നിലയിൽ.",a_heat:"മോട്ടോർ അമിതമായി ചൂടായി. ലോഡും വായുസഞ്ചാരവും പരിശോധിക്കുക.",a_heatOk:"മോട്ടോർ തണുത്തു. നെയ്ത്ത് തുടരുന്നു.",a_brg:"കമ്പനം കൂടുന്നു. ഈ ആഴ്ച ബെയറിംഗ് പരിശോധന പ്ലാൻ ചെയ്യുക.",a_brgOk:"ഷിഫ്റ്റ് മാറ്റത്തിൽ ബെയറിംഗ് മാറ്റി.",a_idle:"മോട്ടോർ ഓണായി 15 മിനിറ്റ് വെറുതെ. വൈദ്യുതി ലാഭിക്കാൻ ഓഫ് ചെയ്യുക.",a_idleOk:"വീണ്ടും നെയ്ത്ത്.",
+v_thread:"മോട്ടോർ കറന്റ് സാധാരണമായിരിക്കെ പിക്കുകൾ ക്രമരഹിതമായി. പ്രശ്നം മോട്ടോറിലല്ല, നെയ്ത്തിലാണ്: <b>നൂൽ പൊട്ടൽ</b>.",
+v_ovl:"ഒരു സെക്കൻഡിനുള്ളിൽ കറന്റ് ഈ തറിയുടെ സാധാരണ നിലയേക്കാൾ വളരെ ഉയർന്നു. മോട്ടോറിൽ അമിത ഭാരം: <b>കുരുക്ക് അല്ലെങ്കിൽ ഓവർലോഡ്</b>.",
+v_heat:"താപനില 70 °C കടന്ന് ഇപ്പോഴും വേഗത്തിൽ ഉയരുന്നു. ഇങ്ങനെ ഓടിയാൽ വൈൻഡിംഗ് കേടാകാം: <b>അമിത ചൂട്</b>.",
+v_brg:"വേഗവും കറന്റും സാധാരണമായിരിക്കെ കമ്പനം പതുക്കെ കൂടി. ഒരു യന്ത്രഭാഗം തേയുന്നു: <b>ബെയറിംഗ് അല്ലെങ്കിൽ റീഡ് തേയ്മാനം</b>. അടിയന്തരമല്ല, പക്ഷേ പ്ലാൻ ചെയ്യുക.",
+v_idle:"പിക്കുകൾ ഇല്ല, എന്നിട്ടും കറന്റ് ഒഴുകുന്നു. തറി പ്രവർത്തിക്കാതെ മോട്ടോർ ഓണാണ്: <b>പാഴാകുന്ന വൈദ്യുതി</b>.",
+r_above:"സാധാരണയേക്കാൾ കൂടുതൽ",r_rise:"ഉയരുന്ന നിരക്ക്",r_idleT:"വെറുതെയിരുന്ന സമയം",r_wasted:"പാഴായ വൈദ്യുതി",r_offA:"ഓഫ് ആകുമ്പോൾ 0 A",
+svTitle:"MachSense ഒരു നെയ്ത്ത് യൂണിറ്റിന് എത്ര ലാഭിക്കും",svIntro:"നിങ്ങളുടെ ഷെഡിന്റെ സംഖ്യകൾ നൽകുക. ഡിഫോൾട്ട് മൂല്യങ്ങൾ ഒരു ചെറിയ പവർലൂം യൂണിറ്റിനുള്ള അനുമാനങ്ങളാണ്; യഥാർത്ഥ ഷെഡിന് അനുസരിച്ച് മാറ്റുക.",reset:"ഡിഫോൾട്ടിലേക്ക് മാറ്റുക",
+g_shed:"നിങ്ങളുടെ ഷെഡ്",g_thread:"നൂൽ പൊട്ടൽ",g_elec:"വൈദ്യുതി",g_motor:"മോട്ടോർ തകരാറുകൾ",
+f_looms:"തറികളുടെ എണ്ണം",f_days:"മാസത്തിലെ പ്രവൃത്തി ദിവസങ്ങൾ",f_kit:"ഒരു തറിക്ക് MachSense കിറ്റ് വില",f_breaks:"ദിവസം ഒരു തറിയിൽ നൂൽ പൊട്ടലുകൾ",f_tBefore:"ഇപ്പോൾ പൊട്ടൽ ശ്രദ്ധിക്കാൻ എടുക്കുന്ന മിനിറ്റുകൾ",f_tAfter:"MachSense മുന്നറിയിപ്പോടെ മിനിറ്റുകൾ",f_ppm:"തറി വേഗം",f_ppcm:"പൂവ് സാന്ദ്രത",h_ppcm:"തുണി എത്ര അടുപ്പത്തിൽ നെയ്തിരിക്കുന്നു",f_loss:"കേടായ ഒരു മീറ്ററിലെ നഷ്ടം",h_loss:"കേടായ തുണി സെക്കൻഡ്സായി വിൽക്കുകയോ വീണ്ടും നെയ്യുകയോ ചെയ്യുന്നു",f_idleH:"ദിവസം ഒരു തറി മോട്ടോർ ഓണായി വെറുതെയിരിക്കുന്ന മണിക്കൂർ",f_idleKw:"വെറുതെയിരിക്കുമ്പോഴുള്ള വൈദ്യുതി ഉപയോഗം",f_cut:"മുന്നറിയിപ്പുകൾ കൊണ്ട് കുറയുന്ന വെറുതെ സമയം",f_tariff:"വൈദ്യുതി നിരക്ക്",f_fails:"വർഷം ഒരു തറിയിലെ തകരാറുകൾ",f_repair:"ഒരു തകരാറിന് റിപ്പയർ ചെലവ് + ഉൽപാദന നഷ്ടം",f_prevent:"മുൻകൂർ മുന്നറിയിപ്പ് തടയുന്ന തകരാറുകൾ",
+u_looms:"തറികൾ",u_days:"ദിവസം",r_month:"മാസം കണക്കാക്കിയ ലാഭം",r_pay:"കിറ്റ് ചെലവ് തിരികെ കിട്ടാൻ മാസങ്ങൾ",r_year:"കിറ്റ് ചെലവ് കഴിഞ്ഞ് ആദ്യ വർഷ ലാഭം",r_loom:"ഒരു തറിക്ക് മാസ ലാഭം",
+brkTitle:"ലാഭം എവിടെ നിന്ന് വരുന്നു",perMonth:"മാസം",b_fab:"സംരക്ഷിച്ച തുണി",b_fabS:"{m} മീ കേടായ തുണി ഒഴിവാക്കി",b_rep:"ഒഴിവാക്കിയ തകരാറുകൾ",b_repS:"വർഷം {n}",b_en:"ലാഭിച്ച വെറുതെ വൈദ്യുതി",
+payTitle:"12 മാസത്തിൽ മുതൽമുടക്ക് തിരികെ",payHint:"ആകെ ലാഭം മൈനസ് കിറ്റ് ചെലവ്",calcTitle:"ഇത് എങ്ങനെ കണക്കാക്കി",note:"ഇവ അനുമാനങ്ങൾ മാത്രം. യഥാർത്ഥ സംഖ്യകൾ തറി പരീക്ഷണങ്ങളിൽ നിന്ന് വരും. തുണി വേഗം = പിക്ക് നിരക്ക് ÷ (പൂവ് സാന്ദ്രത × 100) മീറ്റർ/മിനി.",
+x_speed:"തുണി വേഗം",x_metres:"ലാഭിച്ച മീറ്റർ",x_saving:"ലാഭം",x_energy:"ഊർജ്ജം",x_kit:"കിറ്റ് ചെലവ്",x_payback:"തിരിച്ചടവ്",x_months:"മാസം",x_perMonth:"മാസം",x_looms:"തറികൾ",x_breaks:"പൊട്ടലുകൾ",x_days:"ദിവസം",x_perYear:"വർഷം",x_prevented:"തടഞ്ഞത്",
+footer:"MachSense · വിദ്യാർത്ഥി ECE പ്രോജക്റ്റ് · ആശയ ഘട്ടം, 2026 · ഈ പേജിലെ തത്സമയ ഡാറ്റ മുഴുവൻ സിമുലേറ്റഡ്"},
+
+kn:{tagline:"ಹಳೆಯ ಪವರ್‌ಲೂಮ್‌ಗಳಿಗಾಗಿ ಎಡ್ಜ್-AI ಮೇಲ್ವಿಚಾರಣೆ",tabMonitor:"ಲೈವ್ ಮೇಲ್ವಿಚಾರಣೆ",tabSavings:"ಉಳಿತಾಯ ಲೆಕ್ಕಾಚಾರ",sim:"ಸಿಮ್ಯುಲೇಟೆಡ್ ಡೆಮೊ",toLight:"ಲೈಟ್ ಮೋಡ್‌ಗೆ ಬದಲಿಸಿ",toDark:"ಡಾರ್ಕ್ ಮೋಡ್‌ಗೆ ಬದಲಿಸಿ",
+shedTitle:"ಶೆಡ್ A · 6 ಮಗ್ಗಗಳು",shedIntro:"MachSense ಜೊತೆ ಮಗ್ಗದ ಮಾಲೀಕರು ನೋಡುವುದು ಇದೇ. ಹಾರ್ಡ್‌ವೇರ್ ಸಿದ್ಧವಾಗುವವರೆಗೆ ಸಿಗ್ನಲ್‌ಗಳು ಸಿಮ್ಯುಲೇಟೆಡ್. ಒಂದು ಮಗ್ಗವನ್ನು ಆರಿಸಿ, ಒಂದು ಘಟನೆಯನ್ನು ಪ್ರಾರಂಭಿಸಿ, ನಂತರ ಎಚ್ಚರಿಕೆಯನ್ನು ತೆರೆದು MachSense ಅದನ್ನು ಏಕೆ ಕಳುಹಿಸಿತು ಎಂದು ನೋಡಿ.",
+k1:"ಈಗ ನೇಯುತ್ತಿರುವವು",k1s:"ಸಾಮಾನ್ಯವಾಗಿ ಓಡುತ್ತಿರುವ ಮಗ್ಗಗಳು",k2:"ಶೆಡ್ ದಕ್ಷತೆ",k2s:"ಇಂದು ನೇಯ್ಗೆಯಲ್ಲಿ ಕಳೆದ ಸಮಯದ ಪಾಲು",k3:"ತೆರೆದ ಎಚ್ಚರಿಕೆಗಳು",k3s:"ಮಾಲೀಕರ ಗಮನ ಬೇಕು",k4:"ಉಳಿಸಿದ ಬಟ್ಟೆ",k4s:"ಇಂದು ತಪ್ಪಿಸಿದ ದೋಷಪೂರಿತ ನೇಯ್ಗೆ",k5:"ಖಾಲಿ ಓಟದ ವಿದ್ಯುತ್ ವೆಚ್ಚ",k5s:"ಇಂದು {kwh} kWh ವ್ಯರ್ಥ",
+looms:"ಮಗ್ಗಗಳು",loom:"ಮಗ್ಗ",loomSub:"ಸಾಮಾನ್ಯ ಪವರ್‌ಲೂಮ್ · 3-ಫೇಸ್ 415 V · {hp} HP ಮೋಟಾರ್ · ಸಾಮಾನ್ಯ {ppm} ಪಿಕ್ಸ್/ನಿಮಿ",vib:"ಕಂಪನ",vibHint:"ಕೊನೆಯ 6 ಸೆ · ಚುಕ್ಕೆ ಗೆರೆ = ಈ ಮಗ್ಗದ ಸಾಮಾನ್ಯ ಗರಿಷ್ಠ",cur:"ಮೋಟಾರ್ ಕರೆಂಟ್",curHint:"ಕೊನೆಯ 6 ಸೆ · ಆಂಪಿಯರ್",anomaly:"ಅಸಹಜತೆ",
+m_ppm:"ಪಿಕ್ ದರ",m_cv:"ಲಯ ವ್ಯತ್ಯಾಸ",m_amp:"ಕರೆಂಟ್",m_temp:"ಮೋಟಾರ್ ತಾಪಮಾನ",m_rms:"ಕಂಪನ RMS",simOn:"ಈ ಮಗ್ಗದಲ್ಲಿ ಸಿಮ್ಯುಲೇಟ್ ಮಾಡಿ",e_thread:"ದಾರ ತುಂಡಾಗುವುದು",e_overload:"ದಾರ ಸಿಕ್ಕಿಕೊಳ್ಳುವುದು",e_heat:"ಅತಿಯಾದ ಬಿಸಿ",e_bearing:"ಬೇರಿಂಗ್ ಸವೆತ",e_idle:"ಖಾಲಿ ಬಿಡಿ",auto:"ಯಾದೃಚ್ಛಿಕ ಘಟನೆಗಳು",
+feedTitle:"ಮಾಲೀಕರ ಫೋನ್‌ಗೆ ಎಚ್ಚರಿಕೆಗಳು",tapWhy:"ಕಾರಣಕ್ಕಾಗಿ ಟ್ಯಾಪ್ ಮಾಡಿ",why:"ಏಕೆ?",hide:"ಮರೆಮಾಡಿ",feedFoot:"ಪ್ರತಿ ಎಚ್ಚರಿಕೆಯು ಯಾವ ಮಗ್ಗ, ಏನಾಯಿತು, ಎಷ್ಟು ತುರ್ತು ಎಂದು ಹೇಳುತ್ತದೆ. \"ಏಕೆ?\" MachSense ಹೋಲಿಸಿದ ರೀಡಿಂಗ್‌ಗಳನ್ನು ತೋರಿಸುತ್ತದೆ.",th_read:"ರೀಡಿಂಗ್",th_norm:"ಸಾಮಾನ್ಯ",th_now:"ಈಗ",
+s_ok:"ನೇಯುತ್ತಿದೆ",s_idle:"ಖಾಲಿ · ಪವರ್ ಆನ್",s_warn:"ಸವೆತ ಎಚ್ಚರಿಕೆ",s_alert:"ಎಚ್ಚರಿಕೆ",s_stop:"ನಿಂತಿದೆ",
+a_thread:"ದಾರ ತುಂಡಾಗಿರಬಹುದು. ಹಾಸನ್ನು ಪರಿಶೀಲಿಸಿ.",a_threadOk:"ದಾರ ಮತ್ತೆ ಕಟ್ಟಲಾಗಿದೆ. ನೇಯ್ಗೆ ಮುಂದುವರಿದಿದೆ.",a_ovl:"ಕರೆಂಟ್ ಹಠಾತ್ ಏರಿಕೆ: ದಾರ ಸಿಕ್ಕಿದೆ ಅಥವಾ ಓವರ್‌ಲೋಡ್. ಮಗ್ಗವನ್ನು ನಿಲ್ಲಿಸಿ.",a_ovlOk:"ಸಿಕ್ಕು ತೆರವಾಗಿದೆ. ಕರೆಂಟ್ ಸಾಮಾನ್ಯ.",a_heat:"ಮೋಟಾರ್ ಅತಿಯಾಗಿ ಬಿಸಿಯಾಗಿದೆ. ಲೋಡ್ ಮತ್ತು ಗಾಳಿ ಸಂಚಾರ ಪರಿಶೀಲಿಸಿ.",a_heatOk:"ಮೋಟಾರ್ ತಣ್ಣಗಾಯಿತು. ನೇಯ್ಗೆ ಮುಂದುವರಿದಿದೆ.",a_brg:"ಕಂಪನ ಹೆಚ್ಚುತ್ತಿದೆ. ಈ ವಾರ ಬೇರಿಂಗ್ ಪರಿಶೀಲನೆ ಯೋಜಿಸಿ.",a_brgOk:"ಶಿಫ್ಟ್ ಬದಲಾವಣೆಯಲ್ಲಿ ಬೇರಿಂಗ್ ಬದಲಾಯಿಸಲಾಗಿದೆ.",a_idle:"ಮೋಟಾರ್ ಆನ್ ಇದ್ದು 15 ನಿಮಿಷ ಖಾಲಿ. ವಿದ್ಯುತ್ ಉಳಿಸಲು ಆಫ್ ಮಾಡಿ.",a_idleOk:"ಮತ್ತೆ ನೇಯ್ಗೆ ಆರಂಭ.",
+v_thread:"ಮೋಟಾರ್ ಕರೆಂಟ್ ಸಾಮಾನ್ಯವಾಗಿದ್ದರೂ ಪಿಕ್‌ಗಳು ಅನಿಯಮಿತವಾದವು. ಸಮಸ್ಯೆ ಮೋಟಾರ್‌ನಲ್ಲಿ ಅಲ್ಲ, ನೇಯ್ಗೆಯಲ್ಲಿ: <b>ದಾರ ತುಂಡಾಗುವುದು</b>.",
+v_ovl:"ಒಂದು ಸೆಕೆಂಡಿನಲ್ಲಿ ಕರೆಂಟ್ ಈ ಮಗ್ಗದ ಸಾಮಾನ್ಯ ಮಟ್ಟಕ್ಕಿಂತ ತುಂಬಾ ಏರಿತು. ಮೋಟಾರ್ ಮೇಲೆ ಬಲವಂತದ ಭಾರ: <b>ಸಿಕ್ಕು ಅಥವಾ ಓವರ್‌ಲೋಡ್</b>.",
+v_heat:"ತಾಪಮಾನ 70 °C ದಾಟಿ ಇನ್ನೂ ವೇಗವಾಗಿ ಏರುತ್ತಿದೆ. ಹೀಗೆಯೇ ಓಡಿದರೆ ವೈಂಡಿಂಗ್ ಹಾಳಾಗಬಹುದು: <b>ಅತಿಯಾದ ಬಿಸಿ</b>.",
+v_brg:"ವೇಗ ಮತ್ತು ಕರೆಂಟ್ ಸಾಮಾನ್ಯವಾಗಿದ್ದಾಗ ಕಂಪನ ನಿಧಾನವಾಗಿ ಹೆಚ್ಚಿತು. ಯಂತ್ರದ ಒಂದು ಭಾಗ ಸವೆಯುತ್ತಿದೆ: <b>ಬೇರಿಂಗ್ ಅಥವಾ ರೀಡ್ ಸವೆತ</b>. ತುರ್ತು ಅಲ್ಲ, ಆದರೆ ಯೋಜಿಸಿ.",
+v_idle:"ಪಿಕ್‌ಗಳಿಲ್ಲ, ಆದರೂ ಕರೆಂಟ್ ಹರಿಯುತ್ತಿದೆ. ಮಗ್ಗ ಕೆಲಸ ಮಾಡದೆ ಮೋಟಾರ್ ಆನ್ ಆಗಿದೆ: <b>ವ್ಯರ್ಥ ವಿದ್ಯುತ್</b>.",
+r_above:"ಸಾಮಾನ್ಯಕ್ಕಿಂತ ಹೆಚ್ಚು",r_rise:"ಏರಿಕೆ ದರ",r_idleT:"ಖಾಲಿ ಸಮಯ",r_wasted:"ವ್ಯರ್ಥ ವಿದ್ಯುತ್",r_offA:"ಆಫ್ ಆದಾಗ 0 A",
+svTitle:"MachSense ಒಂದು ನೇಯ್ಗೆ ಘಟಕಕ್ಕೆ ಎಷ್ಟು ಉಳಿಸುತ್ತದೆ",svIntro:"ನಿಮ್ಮ ಶೆಡ್‌ನ ಸಂಖ್ಯೆಗಳನ್ನು ನಮೂದಿಸಿ. ಡೀಫಾಲ್ಟ್ ಮೌಲ್ಯಗಳು ಸಣ್ಣ ಪವರ್‌ಲೂಮ್ ಘಟಕದ ಅಂದಾಜುಗಳು; ನಿಜವಾದ ಶೆಡ್‌ಗೆ ತಕ್ಕಂತೆ ಬದಲಾಯಿಸಿ.",reset:"ಡೀಫಾಲ್ಟ್‌ಗೆ ಮರುಹೊಂದಿಸಿ",
+g_shed:"ನಿಮ್ಮ ಶೆಡ್",g_thread:"ದಾರ ತುಂಡಾಗುವಿಕೆ",g_elec:"ವಿದ್ಯುತ್",g_motor:"ಮೋಟಾರ್ ಸ್ಥಗಿತಗಳು",
+f_looms:"ಮಗ್ಗಗಳ ಸಂಖ್ಯೆ",f_days:"ತಿಂಗಳಲ್ಲಿ ಕೆಲಸದ ದಿನಗಳು",f_kit:"ಒಂದು ಮಗ್ಗಕ್ಕೆ MachSense ಕಿಟ್ ಬೆಲೆ",f_breaks:"ದಿನಕ್ಕೆ ಒಂದು ಮಗ್ಗದಲ್ಲಿ ದಾರ ತುಂಡಾಗುವಿಕೆಗಳು",f_tBefore:"ಈಗ ತುಂಡಾದುದನ್ನು ಗಮನಿಸಲು ಬೇಕಾದ ನಿಮಿಷಗಳು",f_tAfter:"MachSense ಎಚ್ಚರಿಕೆಯೊಂದಿಗೆ ನಿಮಿಷಗಳು",f_ppm:"ಮಗ್ಗದ ವೇಗ",f_ppcm:"ಹೊಕ್ಕು ಸಾಂದ್ರತೆ",h_ppcm:"ಬಟ್ಟೆ ಎಷ್ಟು ಬಿಗಿಯಾಗಿ ನೇಯಲಾಗಿದೆ",f_loss:"ದೋಷಪೂರಿತ ಒಂದು ಮೀಟರ್‌ಗೆ ನಷ್ಟ",h_loss:"ದೋಷಪೂರಿತ ಬಟ್ಟೆ ಸೆಕೆಂಡ್ಸ್ ಆಗಿ ಮಾರಾಟ ಅಥವಾ ಮರು ನೇಯ್ಗೆ",f_idleH:"ದಿನಕ್ಕೆ ಒಂದು ಮಗ್ಗ ಮೋಟಾರ್ ಆನ್ ಇದ್ದು ಖಾಲಿ ಇರುವ ಗಂಟೆಗಳು",f_idleKw:"ಖಾಲಿ ಇರುವಾಗ ವಿದ್ಯುತ್ ಬಳಕೆ",f_cut:"ಎಚ್ಚರಿಕೆಗಳಿಂದ ಕಡಿಮೆಯಾಗುವ ಖಾಲಿ ಸಮಯ",f_tariff:"ವಿದ್ಯುತ್ ದರ",f_fails:"ವರ್ಷಕ್ಕೆ ಒಂದು ಮಗ್ಗದ ಸ್ಥಗಿತಗಳು",f_repair:"ಒಂದು ಸ್ಥಗಿತಕ್ಕೆ ದುರಸ್ತಿ ವೆಚ್ಚ + ಉತ್ಪಾದನಾ ನಷ್ಟ",f_prevent:"ಮುಂಚಿತ ಎಚ್ಚರಿಕೆಯಿಂದ ತಡೆದ ಸ್ಥಗಿತಗಳು",
+u_looms:"ಮಗ್ಗಗಳು",u_days:"ದಿನಗಳು",r_month:"ತಿಂಗಳಿಗೆ ಅಂದಾಜು ಉಳಿತಾಯ",r_pay:"ಕಿಟ್ ವೆಚ್ಚ ಮರಳಿ ಬರಲು ತಿಂಗಳುಗಳು",r_year:"ಕಿಟ್ ವೆಚ್ಚದ ನಂತರ ಮೊದಲ ವರ್ಷದ ಉಳಿತಾಯ",r_loom:"ಒಂದು ಮಗ್ಗಕ್ಕೆ ತಿಂಗಳ ಉಳಿತಾಯ",
+brkTitle:"ಉಳಿತಾಯ ಎಲ್ಲಿಂದ ಬರುತ್ತದೆ",perMonth:"ತಿಂಗಳಿಗೆ",b_fab:"ಉಳಿಸಿದ ಬಟ್ಟೆ",b_fabS:"{m} ಮೀ ದೋಷಪೂರಿತ ಬಟ್ಟೆ ತಪ್ಪಿಸಲಾಗಿದೆ",b_rep:"ತಪ್ಪಿಸಿದ ಸ್ಥಗಿತಗಳು",b_repS:"ವರ್ಷಕ್ಕೆ {n}",b_en:"ಉಳಿಸಿದ ಖಾಲಿ ವಿದ್ಯುತ್",
+payTitle:"12 ತಿಂಗಳಲ್ಲಿ ಹೂಡಿಕೆ ವಾಪಸ್",payHint:"ಒಟ್ಟು ಉಳಿತಾಯ ಮೈನಸ್ ಕಿಟ್ ವೆಚ್ಚ",calcTitle:"ಇದನ್ನು ಹೇಗೆ ಲೆಕ್ಕ ಹಾಕಲಾಗಿದೆ",note:"ಇವು ಅಂದಾಜುಗಳು ಮಾತ್ರ. ನಿಜವಾದ ಸಂಖ್ಯೆಗಳು ಮಗ್ಗದ ಪರೀಕ್ಷೆಗಳಿಂದ ಬರುತ್ತವೆ. ಬಟ್ಟೆಯ ವೇಗ = ಪಿಕ್ ದರ ÷ (ಹೊಕ್ಕು ಸಾಂದ್ರತೆ × 100) ಮೀಟರ್/ನಿಮಿ.",
+x_speed:"ಬಟ್ಟೆಯ ವೇಗ",x_metres:"ಉಳಿಸಿದ ಮೀಟರ್",x_saving:"ಉಳಿತಾಯ",x_energy:"ಶಕ್ತಿ",x_kit:"ಕಿಟ್ ವೆಚ್ಚ",x_payback:"ವಾಪಸ್",x_months:"ತಿಂಗಳು",x_perMonth:"ತಿಂಗಳಿಗೆ",x_looms:"ಮಗ್ಗಗಳು",x_breaks:"ತುಂಡಾಗುವಿಕೆ",x_days:"ದಿನಗಳು",x_perYear:"ವರ್ಷಕ್ಕೆ",x_prevented:"ತಡೆದದ್ದು",
+footer:"MachSense · ವಿದ್ಯಾರ್ಥಿ ECE ಯೋಜನೆ · ಪರಿಕಲ್ಪನೆ ಹಂತ, 2026 · ಈ ಪುಟದ ಲೈವ್ ಡೇಟಾ ಎಲ್ಲವೂ ಸಿಮ್ಯುಲೇಟೆಡ್"}
+};
+
+Object.assign(I18N.en,{tabHistory:"Monthly records",hTitle:"Monthly records · Shed A",hIntro:"Every month MachSense saves the shed's production, electricity and costs. Compare months and see profit or loss at a glance. Sample records: {from} – {to}. MachSense installed: {inst}.",sample:"Sample records",
+hThis:"Latest month",hVsPrev:"vs previous month",c_profit:"Profit / loss",c_kwh:"Electricity used",c_prod:"Fabric produced",c_faulty:"Faulty fabric",
+chProfit:"Profit or loss each month",chProfitHint:"green = profit · red = loss",chKwh:"Electricity used each month",lgUsed:"Used for weaving",installed:"MachSense installed",
+cmpTitle:"Compare two months",col_month:"Month",col_prod:"Produced",col_faulty:"Faulty",col_kwh:"Electricity",col_bill:"Power bill",col_idle:"Idle waste",col_brk:"Breakdowns",col_down:"Downtime",col_income:"Income",col_cost:"Costs",col_pl:"Profit / loss",col_kwhm:"Electricity per metre",
+tblTitle:"All records",copy:"Copy table",copied:"Copied",diff:"Change",before:"Before MachSense",after:"After MachSense",avgProfit:"Average monthly profit",avgIdle:"Average idle power wasted",avgFaulty:"Average faulty fabric",
+hNote:"How profit is worked out: income = good metres × ₹6.8 job-work rate. Costs = power bill + wages ₹1,15,000 + rent & upkeep ₹40,000 + repairs (+ ₹1,20,000 kit cost in the install month)."});
+Object.assign(I18N.ta,{tabHistory:"மாதாந்திர பதிவுகள்",hTitle:"மாதாந்திர பதிவுகள் · கொட்டகை A",hIntro:"ஒவ்வொரு மாதமும் MachSense கொட்டகையின் உற்பத்தி, மின்சாரம், செலவுகளைச் சேமிக்கிறது. மாதங்களை ஒப்பிட்டு லாபம் அல்லது நஷ்டத்தை ஒரே பார்வையில் பாருங்கள். மாதிரிப் பதிவுகள்: {from} – {to}. MachSense பொருத்தியது: {inst}.",sample:"மாதிரிப் பதிவுகள்",
+hThis:"சமீபத்திய மாதம்",hVsPrev:"முந்தைய மாதத்துடன்",c_profit:"லாபம் / நஷ்டம்",c_kwh:"பயன்படுத்திய மின்சாரம்",c_prod:"உற்பத்தியான துணி",c_faulty:"குறைபாடுள்ள துணி",
+chProfit:"ஒவ்வொரு மாதமும் லாபம் அல்லது நஷ்டம்",chProfitHint:"பச்சை = லாபம் · சிவப்பு = நஷ்டம்",chKwh:"ஒவ்வொரு மாதமும் பயன்படுத்திய மின்சாரம்",lgUsed:"நெசவுக்குப் பயன்பட்டது",installed:"MachSense பொருத்தப்பட்டது",
+cmpTitle:"இரண்டு மாதங்களை ஒப்பிடுக",col_month:"மாதம்",col_prod:"உற்பத்தி",col_faulty:"குறைபாடு",col_kwh:"மின்சாரம்",col_bill:"மின் கட்டணம்",col_idle:"சும்மா வீணானது",col_brk:"பழுதுகள்",col_down:"நிறுத்த நேரம்",col_income:"வருமானம்",col_cost:"செலவுகள்",col_pl:"லாபம் / நஷ்டம்",col_kwhm:"ஒரு மீட்டருக்கு மின்சாரம்",
+tblTitle:"அனைத்துப் பதிவுகளும்",copy:"அட்டவணையை நகலெடு",copied:"நகலெடுக்கப்பட்டது",diff:"மாற்றம்",before:"MachSense-க்கு முன்",after:"MachSense-க்குப் பின்",avgProfit:"சராசரி மாத லாபம்",avgIdle:"சராசரி சும்மா வீண் மின்சாரம்",avgFaulty:"சராசரி குறைபாடுள்ள துணி",
+hNote:"லாபம் கணக்கிடும் முறை: வருமானம் = நல்ல மீட்டர் × ₹6.8 ஜாப்-வொர்க் கட்டணம். செலவுகள் = மின் கட்டணம் + கூலி ₹1,15,000 + வாடகை & பராமரிப்பு ₹40,000 + பழுது நீக்கம் (பொருத்திய மாதத்தில் ₹1,20,000 கிட் செலவும்)."});
+Object.assign(I18N.hi,{tabHistory:"मासिक रिकॉर्ड",hTitle:"मासिक रिकॉर्ड · शेड A",hIntro:"MachSense हर महीने शेड का उत्पादन, बिजली और खर्च सहेजता है। महीनों की तुलना करें और एक नज़र में लाभ या घाटा देखें। नमूना रिकॉर्ड: {from} – {to}। MachSense लगाया गया: {inst}।",sample:"नमूना रिकॉर्ड",
+hThis:"नवीनतम महीना",hVsPrev:"पिछले महीने की तुलना में",c_profit:"लाभ / घाटा",c_kwh:"बिजली खपत",c_prod:"बना कपड़ा",c_faulty:"खराब कपड़ा",
+chProfit:"हर महीने लाभ या घाटा",chProfitHint:"हरा = लाभ · लाल = घाटा",chKwh:"हर महीने बिजली खपत",lgUsed:"बुनाई में लगी",installed:"MachSense लगाया गया",
+cmpTitle:"दो महीनों की तुलना",col_month:"महीना",col_prod:"उत्पादन",col_faulty:"खराब",col_kwh:"बिजली",col_bill:"बिजली बिल",col_idle:"खाली बर्बादी",col_brk:"खराबियाँ",col_down:"रुकावट समय",col_income:"आय",col_cost:"खर्च",col_pl:"लाभ / घाटा",col_kwhm:"प्रति मीटर बिजली",
+tblTitle:"सभी रिकॉर्ड",copy:"तालिका कॉपी करें",copied:"कॉपी हो गया",diff:"बदलाव",before:"MachSense से पहले",after:"MachSense के बाद",avgProfit:"औसत मासिक लाभ",avgIdle:"औसत खाली बर्बाद बिजली",avgFaulty:"औसत खराब कपड़ा",
+hNote:"लाभ ऐसे निकाला गया: आय = अच्छे मीटर × ₹6.8 जॉब-वर्क दर। खर्च = बिजली बिल + मज़दूरी ₹1,15,000 + किराया व रखरखाव ₹40,000 + मरम्मत (लगाने वाले महीने में ₹1,20,000 किट लागत भी)।"});
+Object.assign(I18N.te,{tabHistory:"నెలవారీ రికార్డులు",hTitle:"నెలవారీ రికార్డులు · షెడ్ A",hIntro:"MachSense ప్రతి నెలా షెడ్ ఉత్పత్తి, విద్యుత్, ఖర్చులను భద్రపరుస్తుంది. నెలలను పోల్చి లాభం లేదా నష్టాన్ని ఒక్క చూపులో చూడండి. నమూనా రికార్డులు: {from} – {to}. MachSense అమర్చినది: {inst}.",sample:"నమూనా రికార్డులు",
+hThis:"తాజా నెల",hVsPrev:"గత నెలతో పోలిస్తే",c_profit:"లాభం / నష్టం",c_kwh:"వాడిన విద్యుత్",c_prod:"ఉత్పత్తి అయిన బట్ట",c_faulty:"లోపభూయిష్ట బట్ట",
+chProfit:"ప్రతి నెలా లాభం లేదా నష్టం",chProfitHint:"ఆకుపచ్చ = లాభం · ఎరుపు = నష్టం",chKwh:"ప్రతి నెలా వాడిన విద్యుత్",lgUsed:"నేతకు వాడినది",installed:"MachSense అమర్చారు",
+cmpTitle:"రెండు నెలలను పోల్చండి",col_month:"నెల",col_prod:"ఉత్పత్తి",col_faulty:"లోపం",col_kwh:"విద్యుత్",col_bill:"కరెంట్ బిల్లు",col_idle:"ఖాళీ వృథా",col_brk:"బ్రేక్‌డౌన్లు",col_down:"ఆగిన సమయం",col_income:"ఆదాయం",col_cost:"ఖర్చులు",col_pl:"లాభం / నష్టం",col_kwhm:"మీటర్‌కు విద్యుత్",
+tblTitle:"అన్ని రికార్డులు",copy:"పట్టికను కాపీ చేయండి",copied:"కాపీ అయింది",diff:"మార్పు",before:"MachSense కి ముందు",after:"MachSense తర్వాత",avgProfit:"సగటు నెలవారీ లాభం",avgIdle:"సగటు ఖాళీ వృథా విద్యుత్",avgFaulty:"సగటు లోపభూయిష్ట బట్ట",
+hNote:"లాభం లెక్క: ఆదాయం = మంచి మీటర్లు × ₹6.8 జాబ్-వర్క్ రేటు. ఖర్చులు = కరెంట్ బిల్లు + కూలీలు ₹1,15,000 + అద్దె & నిర్వహణ ₹40,000 + మరమ్మతులు (అమర్చిన నెలలో ₹1,20,000 కిట్ ఖర్చు కూడా)."});
+Object.assign(I18N.ml,{tabHistory:"മാസ റെക്കോർഡുകൾ",hTitle:"മാസ റെക്കോർഡുകൾ · ഷെഡ് A",hIntro:"MachSense ഓരോ മാസവും ഷെഡിന്റെ ഉൽപാദനം, വൈദ്യുതി, ചെലവുകൾ സൂക്ഷിക്കുന്നു. മാസങ്ങൾ താരതമ്യം ചെയ്ത് ലാഭമോ നഷ്ടമോ ഒറ്റനോട്ടത്തിൽ കാണുക. മാതൃകാ റെക്കോർഡുകൾ: {from} – {to}. MachSense സ്ഥാപിച്ചത്: {inst}.",sample:"മാതൃകാ റെക്കോർഡുകൾ",
+hThis:"ഏറ്റവും പുതിയ മാസം",hVsPrev:"കഴിഞ്ഞ മാസവുമായി",c_profit:"ലാഭം / നഷ്ടം",c_kwh:"ഉപയോഗിച്ച വൈദ്യുതി",c_prod:"ഉൽപാദിപ്പിച്ച തുണി",c_faulty:"കേടായ തുണി",
+chProfit:"ഓരോ മാസത്തെയും ലാഭം അല്ലെങ്കിൽ നഷ്ടം",chProfitHint:"പച്ച = ലാഭം · ചുവപ്പ് = നഷ്ടം",chKwh:"ഓരോ മാസവും ഉപയോഗിച്ച വൈദ്യുതി",lgUsed:"നെയ്ത്തിന് ഉപയോഗിച്ചത്",installed:"MachSense സ്ഥാപിച്ചു",
+cmpTitle:"രണ്ട് മാസങ്ങൾ താരതമ്യം ചെയ്യുക",col_month:"മാസം",col_prod:"ഉൽപാദനം",col_faulty:"കേട്",col_kwh:"വൈദ്യുതി",col_bill:"വൈദ്യുതി ബിൽ",col_idle:"വെറുതെ പാഴായത്",col_brk:"തകരാറുകൾ",col_down:"നിർത്തിയ സമയം",col_income:"വരുമാനം",col_cost:"ചെലവുകൾ",col_pl:"ലാഭം / നഷ്ടം",col_kwhm:"ഒരു മീറ്ററിന് വൈദ്യുതി",
+tblTitle:"എല്ലാ റെക്കോർഡുകളും",copy:"പട്ടിക പകർത്തുക",copied:"പകർത്തി",diff:"മാറ്റം",before:"MachSense-ന് മുമ്പ്",after:"MachSense-ന് ശേഷം",avgProfit:"ശരാശരി മാസ ലാഭം",avgIdle:"ശരാശരി വെറുതെ പാഴായ വൈദ്യുതി",avgFaulty:"ശരാശരി കേടായ തുണി",
+hNote:"ലാഭം കണക്കാക്കുന്നത്: വരുമാനം = നല്ല മീറ്റർ × ₹6.8 ജോബ്-വർക്ക് നിരക്ക്. ചെലവുകൾ = വൈദ്യുതി ബിൽ + കൂലി ₹1,15,000 + വാടകയും പരിപാലനവും ₹40,000 + റിപ്പയർ (സ്ഥാപിച്ച മാസത്തിൽ ₹1,20,000 കിറ്റ് ചെലവും)."});
+Object.assign(I18N.kn,{tabHistory:"ಮಾಸಿಕ ದಾಖಲೆಗಳು",hTitle:"ಮಾಸಿಕ ದಾಖಲೆಗಳು · ಶೆಡ್ A",hIntro:"MachSense ಪ್ರತಿ ತಿಂಗಳು ಶೆಡ್‌ನ ಉತ್ಪಾದನೆ, ವಿದ್ಯುತ್ ಮತ್ತು ವೆಚ್ಚಗಳನ್ನು ಉಳಿಸುತ್ತದೆ. ತಿಂಗಳುಗಳನ್ನು ಹೋಲಿಸಿ ಲಾಭ ಅಥವಾ ನಷ್ಟವನ್ನು ಒಂದೇ ನೋಟದಲ್ಲಿ ನೋಡಿ. ಮಾದರಿ ದಾಖಲೆಗಳು: {from} – {to}. MachSense ಅಳವಡಿಸಿದ್ದು: {inst}.",sample:"ಮಾದರಿ ದಾಖಲೆಗಳು",
+hThis:"ಇತ್ತೀಚಿನ ತಿಂಗಳು",hVsPrev:"ಹಿಂದಿನ ತಿಂಗಳಿಗೆ ಹೋಲಿಸಿದರೆ",c_profit:"ಲಾಭ / ನಷ್ಟ",c_kwh:"ಬಳಸಿದ ವಿದ್ಯುತ್",c_prod:"ಉತ್ಪಾದಿಸಿದ ಬಟ್ಟೆ",c_faulty:"ದೋಷಪೂರಿತ ಬಟ್ಟೆ",
+chProfit:"ಪ್ರತಿ ತಿಂಗಳ ಲಾಭ ಅಥವಾ ನಷ್ಟ",chProfitHint:"ಹಸಿರು = ಲಾಭ · ಕೆಂಪು = ನಷ್ಟ",chKwh:"ಪ್ರತಿ ತಿಂಗಳು ಬಳಸಿದ ವಿದ್ಯುತ್",lgUsed:"ನೇಯ್ಗೆಗೆ ಬಳಸಿದ್ದು",installed:"MachSense ಅಳವಡಿಸಲಾಗಿದೆ",
+cmpTitle:"ಎರಡು ತಿಂಗಳುಗಳನ್ನು ಹೋಲಿಸಿ",col_month:"ತಿಂಗಳು",col_prod:"ಉತ್ಪಾದನೆ",col_faulty:"ದೋಷ",col_kwh:"ವಿದ್ಯುತ್",col_bill:"ವಿದ್ಯುತ್ ಬಿಲ್",col_idle:"ಖಾಲಿ ವ್ಯರ್ಥ",col_brk:"ಸ್ಥಗಿತಗಳು",col_down:"ನಿಂತ ಸಮಯ",col_income:"ಆದಾಯ",col_cost:"ವೆಚ್ಚಗಳು",col_pl:"ಲಾಭ / ನಷ್ಟ",col_kwhm:"ಪ್ರತಿ ಮೀಟರ್‌ಗೆ ವಿದ್ಯುತ್",
+tblTitle:"ಎಲ್ಲಾ ದಾಖಲೆಗಳು",copy:"ಕೋಷ್ಟಕ ನಕಲಿಸಿ",copied:"ನಕಲಿಸಲಾಗಿದೆ",diff:"ಬದಲಾವಣೆ",before:"MachSense ಮೊದಲು",after:"MachSense ನಂತರ",avgProfit:"ಸರಾಸರಿ ಮಾಸಿಕ ಲಾಭ",avgIdle:"ಸರಾಸರಿ ಖಾಲಿ ವ್ಯರ್ಥ ವಿದ್ಯುತ್",avgFaulty:"ಸರಾಸರಿ ದೋಷಪೂರಿತ ಬಟ್ಟೆ",
+hNote:"ಲಾಭದ ಲೆಕ್ಕ: ಆದಾಯ = ಉತ್ತಮ ಮೀಟರ್ × ₹6.8 ಜಾಬ್-ವರ್ಕ್ ದರ. ವೆಚ್ಚಗಳು = ವಿದ್ಯುತ್ ಬಿಲ್ + ಕೂಲಿ ₹1,15,000 + ಬಾಡಿಗೆ ಮತ್ತು ನಿರ್ವಹಣೆ ₹40,000 + ದುರಸ್ತಿ (ಅಳವಡಿಸಿದ ತಿಂಗಳಲ್ಲಿ ₹1,20,000 ಕಿಟ್ ವೆಚ್ಚವೂ)."});
+
+Object.assign(I18N.en,{tabListen:"Listen",lsTitle:"Listen to the loom",lsIntro:"The MachSense kit hears every pick through a ₹30 contact microphone fixed to the loom frame, so nobody has to record anything. Below, the same detection runs on a sample loom recording, or on one of your own.",
+st1:"Contact mic on the frame",st1s:"hears only its own loom, 24/7",st2:"ESP32 finds each pick",st2s:"measures the rhythm in real time",st3:"Rhythm breaks → alert",st3s:"weaver light, voice alert, owner's phone",
+lsSample:"Use sample",lsUpload:"Upload a recording",lsPlay:"Play",lsPause:"Pause",lsSrcSample:"Sample · Loom 03 · 20 s",lsWave:"Sound from the loom",lsWaveHint:"each tick = one pick detected",lsRate:"Pick rate over time",lsRateHint:"picks/min · shaded band = normal range",
+lgPick:"Pick detected",lgBreak:"Rhythm broken",lgStop:"Loom stopped",lsPicks:"Picks counted",lsAvg:"Normal pick rate",lsFirst:"Rhythm broke at",lsVerdict:"Verdict",
+vOk:"Rhythm steady. Loom weaving normally.",vThread:"Picks went missing. Likely thread break.",vStop:"Rhythm broke, then the loom stopped. Thread break: check the warp.",
+lsFileErr:"Could not read that file. Try an MP3, WAV or M4A recording.",lsFileNote:"Uploaded recordings are analysed in your browser and never leave your device.",lsSampleNote:"The sample sound is generated to match a plain loom at 180 picks/min, with a thread break at 11 s.",
+viewOwner:"Owner view",viewWeaver:"Weaver view",wvIntro:"What the weaver sees: one big light per loom, readable from across the shed.",speak:"Play voice alert",autoSpeak:"Speak new alerts",noVoice:"This device has no voice for this language, so alerts are shown as text only.",wvOk:"All good, keep weaving"});
+Object.assign(I18N.ta,{tabListen:"கேள்",lsTitle:"தறியைக் கேளுங்கள்",lsIntro:"தறிச் சட்டத்தில் பொருத்திய ₹30 காண்டாக்ட் மைக்ரோஃபோன் மூலம் MachSense கிட் ஒவ்வொரு பிக்கையும் கேட்கிறது; யாரும் எதையும் பதிவு செய்ய வேண்டியதில்லை. கீழே, அதே கண்டறிதல் ஒரு மாதிரி தறி ஒலிப்பதிவில் அல்லது உங்கள் சொந்தப் பதிவில் இயங்குகிறது.",
+st1:"சட்டத்தில் காண்டாக்ட் மைக்",st1s:"தன் தறியை மட்டும் 24/7 கேட்கும்",st2:"ESP32 ஒவ்வொரு பிக்கையும் கண்டறியும்",st2s:"தாளத்தை நேரடியாக அளக்கும்",st3:"தாளம் உடைந்தால் → எச்சரிக்கை",st3s:"நெசவாளர் விளக்கு, குரல் எச்சரிக்கை, உரிமையாளர் போன்",
+lsSample:"மாதிரியைப் பயன்படுத்து",lsUpload:"ஒலிப்பதிவைப் பதிவேற்று",lsPlay:"இயக்கு",lsPause:"நிறுத்து",lsSrcSample:"மாதிரி · தறி 03 · 20 வி",lsWave:"தறியிலிருந்து வரும் ஒலி",lsWaveHint:"ஒவ்வொரு குறியும் = கண்டறிந்த ஒரு பிக்",lsRate:"நேரத்துடன் பிக் வேகம்",lsRateHint:"பிக்ஸ்/நிமி · நிழல் பட்டை = இயல்பு வரம்பு",
+lgPick:"கண்டறிந்த பிக்",lgBreak:"தாளம் உடைந்தது",lgStop:"தறி நின்றது",lsPicks:"எண்ணிய பிக்ஸ்",lsAvg:"இயல்பு பிக் வேகம்",lsFirst:"தாளம் உடைந்த நேரம்",lsVerdict:"முடிவு",
+vOk:"தாளம் சீராக உள்ளது. தறி இயல்பாக நெய்கிறது.",vThread:"பிக்ஸ் தவறின. நூல் அறுந்திருக்கலாம்.",vStop:"தாளம் உடைந்து, பிறகு தறி நின்றது. நூல் அறுதல்: பாவு நூலைச் சரிபாருங்கள்.",
+lsFileErr:"அந்தக் கோப்பைப் படிக்க முடியவில்லை. MP3, WAV அல்லது M4A பதிவை முயலுங்கள்.",lsFileNote:"பதிவேற்றிய பதிவுகள் உங்கள் உலாவியிலேயே பகுப்பாய்வு செய்யப்படும்; உங்கள் சாதனத்தை விட்டு வெளியேறாது.",lsSampleNote:"மாதிரி ஒலி 180 பிக்ஸ்/நிமி சாதாரண தறிக்கு ஏற்ப உருவாக்கப்பட்டது; 11 வி-ல் நூல் அறுதல் உள்ளது.",
+viewOwner:"உரிமையாளர் பார்வை",viewWeaver:"நெசவாளர் பார்வை",wvIntro:"நெசவாளர் பார்ப்பது: ஒவ்வொரு தறிக்கும் ஒரு பெரிய விளக்கு, கொட்டகையின் மறுமுனையிலிருந்தும் தெரியும்.",speak:"குரல் எச்சரிக்கையை இயக்கு",autoSpeak:"புதிய எச்சரிக்கைகளைப் பேசு",noVoice:"இந்தச் சாதனத்தில் இந்த மொழிக்கான குரல் இல்லை; எச்சரிக்கைகள் எழுத்தாக மட்டும் காட்டப்படும்.",wvOk:"எல்லாம் சரி, நெசவைத் தொடருங்கள்"});
+Object.assign(I18N.hi,{tabListen:"सुनें",lsTitle:"लूम को सुनें",lsIntro:"MachSense किट लूम के फ्रेम पर लगे ₹30 के कॉन्टैक्ट माइक्रोफ़ोन से हर पिक सुनता है, इसलिए किसी को कुछ रिकॉर्ड नहीं करना पड़ता। नीचे वही पहचान एक नमूना लूम रिकॉर्डिंग पर, या आपकी अपनी रिकॉर्डिंग पर चलती है।",
+st1:"फ्रेम पर कॉन्टैक्ट माइक",st1s:"सिर्फ़ अपना लूम सुनता है, 24/7",st2:"ESP32 हर पिक पहचानता है",st2s:"लय को लाइव मापता है",st3:"लय टूटी → अलर्ट",st3s:"बुनकर की लाइट, आवाज़ अलर्ट, मालिक का फ़ोन",
+lsSample:"नमूना चलाएँ",lsUpload:"रिकॉर्डिंग अपलोड करें",lsPlay:"चलाएँ",lsPause:"रोकें",lsSrcSample:"नमूना · लूम 03 · 20 सेकंड",lsWave:"लूम की आवाज़",lsWaveHint:"हर निशान = पहचाना गया एक पिक",lsRate:"समय के साथ पिक दर",lsRateHint:"पिक/मिनट · छायांकित पट्टी = सामान्य सीमा",
+lgPick:"पहचाना गया पिक",lgBreak:"लय टूटी",lgStop:"लूम रुका",lsPicks:"गिने गए पिक",lsAvg:"सामान्य पिक दर",lsFirst:"लय टूटी",lsVerdict:"नतीजा",
+vOk:"लय स्थिर है। लूम सामान्य रूप से बुन रहा है।",vThread:"पिक छूट गए। शायद धागा टूटा है।",vStop:"लय टूटी, फिर लूम रुक गया। धागा टूटा: ताना जाँचें।",
+lsFileErr:"यह फ़ाइल पढ़ी नहीं जा सकी। MP3, WAV या M4A रिकॉर्डिंग आज़माएँ।",lsFileNote:"अपलोड की गई रिकॉर्डिंग आपके ब्राउज़र में ही जाँची जाती है और आपके डिवाइस से बाहर नहीं जाती।",lsSampleNote:"नमूना आवाज़ 180 पिक/मिनट वाले साधारण लूम जैसी बनाई गई है, जिसमें 11 सेकंड पर धागा टूटता है।",
+viewOwner:"मालिक का दृश्य",viewWeaver:"बुनकर का दृश्य",wvIntro:"बुनकर यह देखता है: हर लूम के लिए एक बड़ी लाइट, जो शेड के दूसरे छोर से भी दिखे।",speak:"आवाज़ अलर्ट चलाएँ",autoSpeak:"नए अलर्ट बोलें",noVoice:"इस डिवाइस पर इस भाषा की आवाज़ नहीं है, इसलिए अलर्ट सिर्फ़ टेक्स्ट में दिखेंगे।",wvOk:"सब ठीक है, बुनाई जारी रखें"});
+Object.assign(I18N.te,{tabListen:"వినండి",lsTitle:"మగ్గాన్ని వినండి",lsIntro:"మగ్గం ఫ్రేమ్‌కు అమర్చిన ₹30 కాంటాక్ట్ మైక్రోఫోన్ ద్వారా MachSense కిట్ ప్రతి పిక్‌ను వింటుంది, కాబట్టి ఎవరూ ఏమీ రికార్డ్ చేయాల్సిన అవసరం లేదు. కింద, అదే గుర్తింపు ఒక నమూనా మగ్గం రికార్డింగ్‌పై లేదా మీ సొంత రికార్డింగ్‌పై నడుస్తుంది.",
+st1:"ఫ్రేమ్‌పై కాంటాక్ట్ మైక్",st1s:"తన మగ్గాన్ని మాత్రమే 24/7 వింటుంది",st2:"ESP32 ప్రతి పిక్‌ను గుర్తిస్తుంది",st2s:"లయను నిజ సమయంలో కొలుస్తుంది",st3:"లయ తప్పితే → హెచ్చరిక",st3s:"నేతగాడి లైట్, వాయిస్ హెచ్చరిక, యజమాని ఫోన్",
+lsSample:"నమూనాను వాడండి",lsUpload:"రికార్డింగ్ అప్‌లోడ్ చేయండి",lsPlay:"ప్లే",lsPause:"పాజ్",lsSrcSample:"నమూనా · మగ్గం 03 · 20 సె",lsWave:"మగ్గం నుంచి వచ్చే శబ్దం",lsWaveHint:"ప్రతి గుర్తు = గుర్తించిన ఒక పిక్",lsRate:"కాలంతో పిక్ రేటు",lsRateHint:"పిక్స్/నిమి · నీడ పట్టీ = సాధారణ పరిధి",
+lgPick:"గుర్తించిన పిక్",lgBreak:"లయ తప్పింది",lgStop:"మగ్గం ఆగింది",lsPicks:"లెక్కించిన పిక్స్",lsAvg:"సాధారణ పిక్ రేటు",lsFirst:"లయ తప్పిన సమయం",lsVerdict:"నిర్ణయం",
+vOk:"లయ స్థిరంగా ఉంది. మగ్గం సాధారణంగా నేస్తోంది.",vThread:"పిక్స్ తప్పిపోయాయి. దారం తెగి ఉండవచ్చు.",vStop:"లయ తప్పి, ఆపై మగ్గం ఆగింది. దారం తెగింది: పడుగును తనిఖీ చేయండి.",
+lsFileErr:"ఆ ఫైల్‌ను చదవలేకపోయాం. MP3, WAV లేదా M4A రికార్డింగ్ ప్రయత్నించండి.",lsFileNote:"అప్‌లోడ్ చేసిన రికార్డింగ్‌లు మీ బ్రౌజర్‌లోనే విశ్లేషించబడతాయి, మీ పరికరం దాటి వెళ్లవు.",lsSampleNote:"నమూనా శబ్దం 180 పిక్స్/నిమి సాధారణ మగ్గానికి సరిపోయేలా తయారు చేయబడింది; 11 సె వద్ద దారం తెగుతుంది.",
+viewOwner:"యజమాని వీక్షణ",viewWeaver:"నేతగాడి వీక్షణ",wvIntro:"నేతగాడు చూసేది: ప్రతి మగ్గానికి ఒక పెద్ద లైట్, షెడ్ అవతలి వైపు నుంచీ కనిపిస్తుంది.",speak:"వాయిస్ హెచ్చరిక ప్లే చేయండి",autoSpeak:"కొత్త హెచ్చరికలు మాట్లాడు",noVoice:"ఈ పరికరంలో ఈ భాషకు వాయిస్ లేదు, కాబట్టి హెచ్చరికలు అక్షరాల్లో మాత్రమే చూపబడతాయి.",wvOk:"అంతా బాగుంది, నేత కొనసాగించండి"});
+Object.assign(I18N.ml,{tabListen:"കേൾക്കുക",lsTitle:"തറിയെ കേൾക്കുക",lsIntro:"തറിയുടെ ഫ്രെയിമിൽ ഘടിപ്പിച്ച ₹30 കോൺടാക്റ്റ് മൈക്രോഫോൺ വഴി MachSense കിറ്റ് ഓരോ പിക്കും കേൾക്കുന്നു, അതിനാൽ ആരും ഒന്നും റെക്കോർഡ് ചെയ്യേണ്ടതില്ല. താഴെ, അതേ കണ്ടെത്തൽ ഒരു മാതൃകാ തറി റെക്കോർഡിംഗിലോ നിങ്ങളുടെ സ്വന്തം റെക്കോർഡിംഗിലോ പ്രവർത്തിക്കുന്നു.",
+st1:"ഫ്രെയിമിൽ കോൺടാക്റ്റ് മൈക്ക്",st1s:"സ്വന്തം തറി മാത്രം 24/7 കേൾക്കുന്നു",st2:"ESP32 ഓരോ പിക്കും കണ്ടെത്തുന്നു",st2s:"താളം തത്സമയം അളക്കുന്നു",st3:"താളം തെറ്റിയാൽ → മുന്നറിയിപ്പ്",st3s:"നെയ്ത്തുകാരന്റെ ലൈറ്റ്, വോയ്സ് മുന്നറിയിപ്പ്, ഉടമയുടെ ഫോൺ",
+lsSample:"മാതൃക ഉപയോഗിക്കുക",lsUpload:"റെക്കോർഡിംഗ് അപ്‌ലോഡ് ചെയ്യുക",lsPlay:"പ്ലേ",lsPause:"നിർത്തുക",lsSrcSample:"മാതൃക · തറി 03 · 20 സെ",lsWave:"തറിയിൽ നിന്നുള്ള ശബ്ദം",lsWaveHint:"ഓരോ അടയാളവും = കണ്ടെത്തിയ ഒരു പിക്ക്",lsRate:"സമയത്തിനനുസരിച്ച് പിക്ക് നിരക്ക്",lsRateHint:"പിക്കുകൾ/മിനി · നിഴൽ പട്ട = സാധാരണ പരിധി",
+lgPick:"കണ്ടെത്തിയ പിക്ക്",lgBreak:"താളം തെറ്റി",lgStop:"തറി നിന്നു",lsPicks:"എണ്ണിയ പിക്കുകൾ",lsAvg:"സാധാരണ പിക്ക് നിരക്ക്",lsFirst:"താളം തെറ്റിയ സമയം",lsVerdict:"നിഗമനം",
+vOk:"താളം സ്ഥിരമാണ്. തറി സാധാരണ നെയ്യുന്നു.",vThread:"പിക്കുകൾ നഷ്ടമായി. നൂൽ പൊട്ടിയിരിക്കാം.",vStop:"താളം തെറ്റി, പിന്നെ തറി നിന്നു. നൂൽ പൊട്ടൽ: പാവ് പരിശോധിക്കുക.",
+lsFileErr:"ആ ഫയൽ വായിക്കാനായില്ല. MP3, WAV അല്ലെങ്കിൽ M4A റെക്കോർഡിംഗ് ശ്രമിക്കുക.",lsFileNote:"അപ്‌ലോഡ് ചെയ്ത റെക്കോർഡിംഗുകൾ നിങ്ങളുടെ ബ്രൗസറിൽ തന്നെ വിശകലനം ചെയ്യുന്നു, ഉപകരണം വിട്ടുപോകില്ല.",lsSampleNote:"മാതൃകാ ശബ്ദം 180 പിക്കുകൾ/മിനി സാധാരണ തറിക്ക് അനുസരിച്ച് നിർമ്മിച്ചതാണ്; 11 സെ-ൽ നൂൽ പൊട്ടുന്നു.",
+viewOwner:"ഉടമയുടെ കാഴ്ച",viewWeaver:"നെയ്ത്തുകാരന്റെ കാഴ്ച",wvIntro:"നെയ്ത്തുകാരൻ കാണുന്നത്: ഓരോ തറിക്കും ഒരു വലിയ ലൈറ്റ്, ഷെഡിന്റെ മറുവശത്തുനിന്നും കാണാം.",speak:"വോയ്സ് മുന്നറിയിപ്പ് പ്ലേ ചെയ്യുക",autoSpeak:"പുതിയ മുന്നറിയിപ്പുകൾ പറയുക",noVoice:"ഈ ഉപകരണത്തിൽ ഈ ഭാഷയ്ക്ക് വോയ്സ് ഇല്ല, അതിനാൽ മുന്നറിയിപ്പുകൾ എഴുത്തായി മാത്രം കാണിക്കും.",wvOk:"എല്ലാം ശരി, നെയ്ത്ത് തുടരുക"});
+Object.assign(I18N.kn,{tabListen:"ಆಲಿಸಿ",lsTitle:"ಮಗ್ಗವನ್ನು ಆಲಿಸಿ",lsIntro:"ಮಗ್ಗದ ಚೌಕಟ್ಟಿಗೆ ಅಳವಡಿಸಿದ ₹30 ಕಾಂಟ್ಯಾಕ್ಟ್ ಮೈಕ್ರೋಫೋನ್ ಮೂಲಕ MachSense ಕಿಟ್ ಪ್ರತಿ ಪಿಕ್ ಅನ್ನು ಕೇಳುತ್ತದೆ, ಆದ್ದರಿಂದ ಯಾರೂ ಏನನ್ನೂ ರೆಕಾರ್ಡ್ ಮಾಡಬೇಕಿಲ್ಲ. ಕೆಳಗೆ, ಅದೇ ಪತ್ತೆ ಒಂದು ಮಾದರಿ ಮಗ್ಗದ ರೆಕಾರ್ಡಿಂಗ್ ಅಥವಾ ನಿಮ್ಮದೇ ರೆಕಾರ್ಡಿಂಗ್ ಮೇಲೆ ನಡೆಯುತ್ತದೆ.",
+st1:"ಚೌಕಟ್ಟಿನ ಮೇಲೆ ಕಾಂಟ್ಯಾಕ್ಟ್ ಮೈಕ್",st1s:"ತನ್ನ ಮಗ್ಗವನ್ನು ಮಾತ್ರ 24/7 ಕೇಳುತ್ತದೆ",st2:"ESP32 ಪ್ರತಿ ಪಿಕ್ ಪತ್ತೆ ಮಾಡುತ್ತದೆ",st2s:"ಲಯವನ್ನು ನೈಜ ಸಮಯದಲ್ಲಿ ಅಳೆಯುತ್ತದೆ",st3:"ಲಯ ತಪ್ಪಿದರೆ → ಎಚ್ಚರಿಕೆ",st3s:"ನೇಕಾರರ ದೀಪ, ಧ್ವನಿ ಎಚ್ಚರಿಕೆ, ಮಾಲೀಕರ ಫೋನ್",
+lsSample:"ಮಾದರಿ ಬಳಸಿ",lsUpload:"ರೆಕಾರ್ಡಿಂಗ್ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ",lsPlay:"ಪ್ಲೇ",lsPause:"ವಿರಾಮ",lsSrcSample:"ಮಾದರಿ · ಮಗ್ಗ 03 · 20 ಸೆ",lsWave:"ಮಗ್ಗದಿಂದ ಬರುವ ಶಬ್ದ",lsWaveHint:"ಪ್ರತಿ ಗುರುತು = ಪತ್ತೆಯಾದ ಒಂದು ಪಿಕ್",lsRate:"ಕಾಲದೊಂದಿಗೆ ಪಿಕ್ ದರ",lsRateHint:"ಪಿಕ್ಸ್/ನಿಮಿ · ನೆರಳು ಪಟ್ಟಿ = ಸಾಮಾನ್ಯ ವ್ಯಾಪ್ತಿ",
+lgPick:"ಪತ್ತೆಯಾದ ಪಿಕ್",lgBreak:"ಲಯ ತಪ್ಪಿದೆ",lgStop:"ಮಗ್ಗ ನಿಂತಿದೆ",lsPicks:"ಎಣಿಸಿದ ಪಿಕ್ಸ್",lsAvg:"ಸಾಮಾನ್ಯ ಪಿಕ್ ದರ",lsFirst:"ಲಯ ತಪ್ಪಿದ ಸಮಯ",lsVerdict:"ತೀರ್ಮಾನ",
+vOk:"ಲಯ ಸ್ಥಿರವಾಗಿದೆ. ಮಗ್ಗ ಸಾಮಾನ್ಯವಾಗಿ ನೇಯುತ್ತಿದೆ.",vThread:"ಪಿಕ್‌ಗಳು ತಪ್ಪಿವೆ. ದಾರ ತುಂಡಾಗಿರಬಹುದು.",vStop:"ಲಯ ತಪ್ಪಿ, ನಂತರ ಮಗ್ಗ ನಿಂತಿತು. ದಾರ ತುಂಡಾಗಿದೆ: ಹಾಸನ್ನು ಪರಿಶೀಲಿಸಿ.",
+lsFileErr:"ಆ ಫೈಲ್ ಓದಲಾಗಲಿಲ್ಲ. MP3, WAV ಅಥವಾ M4A ರೆಕಾರ್ಡಿಂಗ್ ಪ್ರಯತ್ನಿಸಿ.",lsFileNote:"ಅಪ್‌ಲೋಡ್ ಮಾಡಿದ ರೆಕಾರ್ಡಿಂಗ್‌ಗಳನ್ನು ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲೇ ವಿಶ್ಲೇಷಿಸಲಾಗುತ್ತದೆ, ನಿಮ್ಮ ಸಾಧನದಿಂದ ಹೊರಹೋಗುವುದಿಲ್ಲ.",lsSampleNote:"ಮಾದರಿ ಶಬ್ದವನ್ನು 180 ಪಿಕ್ಸ್/ನಿಮಿ ಸಾಮಾನ್ಯ ಮಗ್ಗಕ್ಕೆ ಹೊಂದುವಂತೆ ರಚಿಸಲಾಗಿದೆ; 11 ಸೆ ನಲ್ಲಿ ದಾರ ತುಂಡಾಗುತ್ತದೆ.",
+viewOwner:"ಮಾಲೀಕರ ನೋಟ",viewWeaver:"ನೇಕಾರರ ನೋಟ",wvIntro:"ನೇಕಾರರು ನೋಡುವುದು: ಪ್ರತಿ ಮಗ್ಗಕ್ಕೆ ಒಂದು ದೊಡ್ಡ ದೀಪ, ಶೆಡ್‌ನ ಆಚೆಯಿಂದಲೂ ಕಾಣುತ್ತದೆ.",speak:"ಧ್ವನಿ ಎಚ್ಚರಿಕೆ ಪ್ಲೇ ಮಾಡಿ",autoSpeak:"ಹೊಸ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಹೇಳು",noVoice:"ಈ ಸಾಧನದಲ್ಲಿ ಈ ಭಾಷೆಗೆ ಧ್ವನಿ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಪಠ್ಯವಾಗಿ ಮಾತ್ರ ತೋರಿಸಲಾಗುತ್ತದೆ.",wvOk:"ಎಲ್ಲವೂ ಸರಿ, ನೇಯ್ಗೆ ಮುಂದುವರಿಸಿ"});
+
+(function(){
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const rnd = (a,b)=>a+Math.random()*(b-a);
+const gauss = ()=> (Math.random()+Math.random()+Math.random()-1.5)/1.5;
+const inr = v => (v<0?'−':'')+'₹' + Math.round(Math.abs(v)).toLocaleString('en-IN');
+const store = { get(k){ try{return localStorage.getItem(k);}catch(e){return null;} }, set(k,v){ try{localStorage.setItem(k,v);}catch(e){} } };
+
+/* ---------------- language ---------------- */
+let LANG = store.get('ms-lang'); if(!I18N[LANG]) LANG='en';
+const t = (k,vars) => { let s = (I18N[LANG][k] ?? I18N.en[k] ?? k); if(vars) for(const v in vars) s = s.replace('{'+v+'}', vars[v]); return s; };
+const tv = s => (typeof s==='string' && s[0]==='@') ? t(s.slice(1)) : s;
+function applyLang(){
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-i]').forEach(el=>{ el.textContent = t(el.dataset.i); });
+  $('lang').value = LANG;
+  updateThemeLabel();
+  buildInputs(); renderFeed(); calc(); renderHistory(); listenText(); if(weaverMode) buildTiles();
+}
+$('lang').addEventListener('change', e=>{ LANG = e.target.value; store.set('ms-lang', LANG); applyLang(); });
+
+/* ---------------- theme ---------------- */
+const mq = window.matchMedia('(prefers-color-scheme: dark)');
+function isDark(){ const a=document.documentElement.getAttribute('data-theme'); return a ? a==='dark' : mq.matches; }
+function setTheme(th){ document.documentElement.setAttribute('data-theme', th); store.set('ms-theme', th); updateThemeLabel(); if(!$('v-savings').hidden) calc(); if(!$('v-history').hidden) drawHistory(); if(!$('v-listen').hidden) drawListen(); if(weaverMode) renderTiles(); }
+function updateThemeLabel(){ const b=$('theme'); const lbl = isDark()? t('toLight') : t('toDark'); b.setAttribute('aria-label', lbl); b.title = lbl; }
+const savedTheme = store.get('ms-theme');
+document.documentElement.setAttribute('data-theme', savedTheme==='dark'||savedTheme==='light' ? savedTheme : (mq.matches?'dark':'light'));
+$('theme').addEventListener('click', ()=> setTheme(isDark()?'light':'dark'));
+
+/* ---------------- tabs ---------------- */
+const tabs = {monitor:['t-monitor','v-monitor'], listen:['t-listen','v-listen'], savings:['t-savings','v-savings'], history:['t-history','v-history']};
+function show(name){
+  Object.entries(tabs).forEach(([k,[tb,v]])=>{ $(tb).setAttribute('aria-selected', k===name); $(v).hidden = k!==name; });
+  if (name==='savings') calc();
+  if (name==='history') renderHistory();
+  if (name==='listen') drawListen();
+}
+Object.entries(tabs).forEach(([k,[tb]])=> $(tb).addEventListener('click',()=>{ show(k); try{history.replaceState(null,'','#'+k)}catch(e){} }));
+
+/* ---------------- canvas helpers ---------------- */
+function fit(c){
+  const r=c.getBoundingClientRect(), d=window.devicePixelRatio||1, w=Math.max(1,Math.round(r.width*d)), h=Math.max(1,Math.round(r.height*d));
+  if(c.width!==w||c.height!==h){c.width=w;c.height=h;}
+  const x=c.getContext('2d'); x.setTransform(d,0,0,d,0,0); return [x,r.width,r.height];
+}
+function series(c, data, max, color, base, thin){
+  const [x,w,h]=fit(c); x.clearRect(0,0,w,h); if(w<5) return;
+  const pad = thin?2:8;
+  if(!thin){ x.strokeStyle=css('--line'); x.lineWidth=1; for(let i=1;i<4;i++){const y=h*i/4; x.beginPath(); x.moveTo(0,y); x.lineTo(w,y); x.stroke();} }
+  const Y = v => h - pad - Math.min(1,v/max)*(h-pad*2);
+  if(base!=null && !thin){ x.setLineDash([5,5]); x.strokeStyle=css('--ink-3'); x.beginPath(); x.moveTo(0,Y(base)); x.lineTo(w,Y(base)); x.stroke(); x.setLineDash([]); }
+  if(data.length<2) return;
+  const st=w/(data.length-1);
+  x.beginPath(); data.forEach((v,i)=>{ i? x.lineTo(i*st,Y(v)) : x.moveTo(0,Y(v)); });
+  x.strokeStyle=color; x.lineWidth=thin?1.2:1.7; x.lineJoin='round'; x.stroke();
+  x.lineTo(w,h); x.lineTo(0,h); x.closePath();
+  const g=x.createLinearGradient(0,0,0,h); g.addColorStop(0,color+'40'); g.addColorStop(1,color+'00');
+  x.fillStyle=g; x.fill();
+  if(!thin){ const ly=Y(data[data.length-1]); x.beginPath(); x.arc(w-4,ly,3.5,0,7); x.fillStyle=color; x.fill(); }
+}
+
+/* ---------------- simulation ---------------- */
+const SPS=25, WIN=SPS*6, RATE=8, IDLE_KW=0.63, M_PER_MIN=0.075;
+const looms=[182,176,168,190,174,160].map((p,i)=>({
+  id:i, no:String(i+1).padStart(2,'0'), basePpm:p, baseRms:[.30,.28,.33,.27,.31,.35][i], baseAmp:[3.1,2.9,3.3,2.7,3.0,3.6][i],
+  hp:[1,1,1.5,1,1,2][i], state:'running', temp:rnd(43,47), phase:Math.random(), vib:[], cur:[], picks:[], t:0,
+  ev:null, evT:0, flag:false, wear:0, idleT:0, score:.05, rms:0, amp:0, ppm:0, cv:2, runT:0, allT:0
+}));
+const lname = no => t('loom')+' '+no;
+let sel=0, simMin=8*60, kwh=0, fabric=0, alerts=[], open=new Set(), since=0, nextAuto=rnd(16,24), openId=null, aid=0;
+const clock=()=>{const m=Math.floor(simMin)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
+
+function alert(L,sev,k,key,ev,v){
+  const a={id:++aid,t:clock(),no:L.no,sev,k,ev,v};
+  alerts.unshift(a); if(alerts.length>12) alerts.pop();
+  if(key) open.add(key);
+  if(sev!=='ok' && ev) openId=a.id;
+  renderFeed();
+  if(sev!=='ok' && $('autoSpeak').checked) speak(lname(L.no)+'. '+t(k));
+}
+
+/* ---------------- voice alerts ---------------- */
+function pickVoice(){
+  try{ const vs=speechSynthesis.getVoices(); const code=(LOC[LANG]||'en-IN');
+    return vs.find(v=>v.lang===code) || vs.find(v=>v.lang && v.lang.toLowerCase().startsWith(LANG)) || null; }catch(e){ return null; }
+}
+function speak(text){
+  const note=$('voiceNote');
+  if(!('speechSynthesis' in window)){ note.textContent=t('noVoice'); note.hidden=false; return; }
+  const v=pickVoice();
+  if(!v && LANG!=='en'){ note.textContent=t('noVoice'); note.hidden=false; return; }
+  note.hidden=true;
+  try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang=LOC[LANG]||'en-IN'; if(v) u.voice=v; u.rate=.95; speechSynthesis.speak(u); }catch(e){}
+}
+try{ speechSynthesis.onvoiceschanged=()=>{}; speechSynthesis.getVoices(); }catch(e){}
+
+/* ---------------- owner / weaver view ---------------- */
+let weaverMode=false;
+function setView(w){ weaverMode=w; $('vOwner').setAttribute('aria-pressed',!w); $('vWeaver').setAttribute('aria-pressed',w); $('weaver').hidden=!w; $('ownerGrid').hidden=w; if(w) buildTiles(); }
+$('vOwner').addEventListener('click',()=>setView(false));
+$('vWeaver').addEventListener('click',()=>setView(true));
+function buildTiles(){
+  $('tiles').innerHTML=looms.map(L=>`<div class="card tile" data-t="${L.id}"><span class="lamp" data-l></span><span class="no" data-no></span><span class="tx" data-tx></span><button class="sbtn speakb" data-sp="${L.id}">🔊 <span>${t('speak')}</span></button></div>`).join('');
+  renderTiles();
+}
+function loomMsg(L){
+  const a=alerts.find(x=>x.no===L.no && x.sev!=='ok');
+  const [k]=st(L);
+  return (k==='ok' || !a) ? t('wvOk') : t(a.k);
+}
+function renderTiles(){
+  $('wvSel').textContent=lname(looms[sel].no);
+  $('tiles').querySelectorAll('.tile').forEach(el=>{
+    const L=looms[+el.dataset.t], [k,txt]=st(L);
+    const col = k==='crit'?css('--crit'):k==='warn'||k==='idle'?css('--warn'):css('--ok');
+    el.className='card tile'+(k==='crit'?' crit':k==='warn'||k==='idle'?' warn':''); el.setAttribute('aria-current', L.id===sel);
+    const lamp=el.querySelector('[data-l]'); lamp.style.setProperty('--lc',col); lamp.classList.toggle('blink',k==='crit');
+    el.querySelector('[data-no]').textContent=L.no;
+    el.querySelector('[data-tx]').textContent=k==='ok'?t('wvOk'):txt+' · '+loomMsg(L);
+  });
+}
+$('tiles').addEventListener('click',e=>{ const b=e.target.closest('[data-sp]'); if(b){ const L=looms[+b.dataset.sp]; speak(lname(L.no)+'. '+loomMsg(L)); return; }
+  const tl=e.target.closest('.tile'); if(tl){ sel=+tl.dataset.t; loomsEl.querySelectorAll('.loom').forEach(x=>x.setAttribute('aria-pressed',+x.dataset.id===sel)); renderTiles(); } });
+const R = (k,normal,now,bad)=>({k,normal,now,bad});
+
+function trigger(L,e){
+  if(L.ev && L.ev!=='bearing') return;
+  L.ev=e; L.evT=0; L.flag=false;
+  if(e==='idle'){ L.state='idle'; L.idleT=0; return; }
+  L.state='running'; if(e==='bearing') L.wear=0;
+}
+
+function step(L,dt){
+  L.evT+=dt; L.t+=dt; L.allT+=dt; if(L.state==='running' && (!L.ev || L.ev==='bearing')) L.runT+=dt;
+  const e=L.ev;
+  if(e==='thread'){
+    if(L.evT>2.2 && !L.flag){ L.flag=true;
+      alert(L,'crit','a_thread','th'+L.id,[R('m_ppm',L.basePpm+' /min',L.ppm+' /min',L.ppm<L.basePpm*0.9),R('m_cv','2%',Math.round(L.cv)+'%',true),R('cur',L.baseAmp.toFixed(1)+' A',L.amp.toFixed(1)+' A',false),R('m_temp','≈46 °C',L.temp.toFixed(0)+' °C',false)],'v_thread');
+      fabric += 5*M_PER_MIN; }
+    if(L.evT>6 && L.state==='running') L.state='stopped';
+    if(L.evT>16){ L.state='running'; L.ev=null; open.delete('th'+L.id); alert(L,'ok','a_threadOk'); }
+  }
+  if(e==='overload'){
+    if(L.evT>1.2 && !L.flag){ L.flag=true;
+      alert(L,'crit','a_ovl','ov'+L.id,[R('cur',L.baseAmp.toFixed(1)+' A',L.amp.toFixed(1)+' A',true),R('r_above','< 20%','+'+Math.round((L.amp/L.baseAmp-1)*100)+'%',true),R('m_ppm',L.basePpm+' /min',L.ppm+' /min',false),R('m_temp','≈46 °C',L.temp.toFixed(0)+' °C',false)],'v_ovl'); }
+    if(L.evT>4 && L.state==='running') L.state='stopped';
+    if(L.evT>14){ L.state='running'; L.ev=null; open.delete('ov'+L.id); alert(L,'ok','a_ovlOk'); }
+  }
+  if(e==='heat'){
+    if(L.evT<18) L.temp+=1.6*dt;
+    if(L.temp>70 && !L.flag){ L.flag=true;
+      alert(L,'crit','a_heat','ht'+L.id,[R('m_temp','≈46 °C',L.temp.toFixed(0)+' °C',true),R('r_rise','< 0.2 °C/min','+1.6 °C/min',true),R('cur',L.baseAmp.toFixed(1)+' A',L.amp.toFixed(1)+' A',L.amp>L.baseAmp*1.15),R('m_ppm',L.basePpm+' /min',L.ppm+' /min',false)],'v_heat'); }
+    if(L.evT>18 && L.state==='running') L.state='stopped';
+    if(L.evT>34){ L.state='running'; L.ev=null; open.delete('ht'+L.id); alert(L,'ok','a_heatOk'); }
+  }
+  if(e==='bearing'){
+    L.wear=Math.min(1,L.wear+dt/18);
+    if(L.wear>.55 && !L.flag){ L.flag=true;
+      alert(L,'warn','a_brg','br'+L.id,[R('m_rms',L.baseRms.toFixed(2)+' g',L.rms.toFixed(2)+' g',true),R('r_above','< 15%','+'+Math.round((L.rms/L.baseRms-1)*100)+'%',true),R('m_ppm',L.basePpm+' /min',L.ppm+' /min',false),R('cur',L.baseAmp.toFixed(1)+' A',L.amp.toFixed(1)+' A',false)],'v_brg'); }
+    if(L.evT>45){ L.ev=null; L.wear=0; open.delete('br'+L.id); alert(L,'ok','a_brgOk'); }
+  }
+  if(e==='idle'){
+    L.idleT+=dt;
+    if(L.idleT>15 && !L.flag){ L.flag=true;
+      alert(L,'warn','a_idle','id'+L.id,[R('m_ppm',L.basePpm+' /min','0 /min',true),R('cur','@r_offA',L.amp.toFixed(1)+' A',true),R('r_idleT','—','15 min',true),R('r_wasted','—',(IDLE_KW*15/60).toFixed(2)+' kWh',true)],'v_idle'); }
+    if(L.evT>40){ L.state='running'; L.ev=null; L.idleT=0; open.delete('id'+L.id); alert(L,'ok','a_idleOk'); }
+  }
+  if(e!=='heat'){ const tgt=L.state==='running'?44+L.basePpm/90:35; L.temp+=(tgt-L.temp)*0.004; }
+
+  let ppmNow=0;
+  for(let s=0;s<Math.round(dt*SPS);s++){
+    let v=.04+Math.abs(gauss())*.035, a;
+    if(L.state==='running'){
+      const irr = e==='thread' && L.evT>.5;
+      const ppm = L.basePpm*(irr?rnd(.55,1.15):1+gauss()*.006);
+      const before=Math.floor(L.phase); L.phase+=ppm/60/SPS; const f=L.phase%1;
+      const miss = irr && Math.floor(L.phase)%3===1;
+      if(Math.floor(L.phase)>before && !miss){ L.picks.push(L.t+s/SPS); if(L.picks.length>10) L.picks.shift(); }
+      if(f<.14 && !miss) v+=(1-f/.14)*L.baseRms*2.6;
+      v+=L.wear*(.22+Math.abs(gauss())*.42);
+      a=L.baseAmp+gauss()*.1+(f<.14?.22:0);
+      if(e==='overload'&&L.evT>.3) a+=Math.min(4.2,L.evT*2.2);
+      if(e==='heat') a+=Math.max(0,(L.temp-55)*.04);
+      ppmNow=ppm;
+    } else if(L.state==='idle'){ v=.025+Math.abs(gauss())*.015; a=1.1+gauss()*.04; }
+    else { v=.008+Math.abs(gauss())*.006; a=.02; }
+    L.vib.push(Math.max(0,v)); L.cur.push(Math.max(0,a)); if(L.vib.length>WIN){L.vib.shift();L.cur.shift();}
+  }
+  const last=L.vib.slice(-SPS*2); L.rms=Math.sqrt(last.reduce((s,x)=>s+x*x,0)/Math.max(1,last.length));
+  L.amp=L.cur.slice(-SPS).reduce((s,x)=>s+x,0)/SPS;
+  if(L.state==='running'){
+    L.ppm=Math.round(ppmNow+gauss()*1.5);
+    if(L.picks.length>4){ const iv=[]; for(let i=1;i<L.picks.length;i++) iv.push(L.picks[i]-L.picks[i-1]);
+      const m=iv.reduce((a,b)=>a+b,0)/iv.length, sd=Math.sqrt(iv.reduce((a,b)=>a+(b-m)**2,0)/iv.length); L.cv=L.cv*.7+(sd/m*100)*.3; }
+  } else { L.ppm=0; L.cv=L.cv*.9; }
+  let sc=.04+Math.abs(gauss())*.015;
+  if(L.state==='running'){ sc+=Math.max(0,L.rms/L.baseRms-1.12)*.55+Math.max(0,L.amp/L.baseAmp-1.2)*.5+Math.max(0,(L.temp-58)/20)+Math.max(0,(L.cv-6)/40); }
+  if(L.state==='stopped') sc=.88; if(L.state==='idle') sc=Math.min(.7,.18+L.idleT/30);
+  L.score=Math.min(1,L.score*.85+sc*.15);
+  if(L.state==='idle') kwh+=IDLE_KW*dt/60;
+}
+
+/* ---------------- render: looms + feed ---------------- */
+const loomsEl=$('looms');
+loomsEl.innerHTML=looms.map(L=>`<button class="loom" data-id="${L.id}" aria-pressed="${L.id===sel}"><span class="nm" data-n></span><span class="pill ok" data-p></span><canvas data-c aria-hidden="true"></canvas><span class="mini"><span data-a></span><span data-b></span><span data-d></span></span></button>`).join('');
+loomsEl.addEventListener('click',e=>{const b=e.target.closest('.loom'); if(!b) return; sel=+b.dataset.id; loomsEl.querySelectorAll('.loom').forEach(x=>x.setAttribute('aria-pressed',x===b)); });
+document.querySelectorAll('[data-ev]').forEach(b=>b.addEventListener('click',()=>trigger(looms[sel],b.dataset.ev)));
+
+function st(L){
+  if(L.state==='stopped') return ['crit',t('s_stop')];
+  if(L.state==='idle') return ['idle',t('s_idle')];
+  if(L.ev && L.flag) return L.ev==='bearing'?['warn',t('s_warn')]:['crit',t('s_alert')];
+  return ['ok',t('s_ok')];
+}
+const scoreCol = s => s>.6?css('--crit'):s>.32?css('--warn'):css('--ok');
+
+function renderFeed(){
+  $('feed').innerHTML=alerts.map(a=>{
+    const isOpen=a.id===openId && a.ev;
+    return `<li class="al ${a.sev}${isOpen?' open':''}"><button class="top" data-a="${a.id}" ${a.ev?'':'tabindex="-1"'} aria-expanded="${!!isOpen}">
+      <span class="dot"></span><span class="msg">${t(a.k)}</span>${a.ev?'<span class="why">'+(isOpen?t('hide'):t('why'))+'</span>':'<span></span>'}
+      <span class="meta">${a.t} · ${lname(a.no)}</span></button>
+      ${isOpen?`<div class="ev"><table><thead><tr><th>${t('th_read')}</th><th style="text-align:right">${t('th_norm')}</th><th style="text-align:right">${t('th_now')}</th></tr></thead><tbody>${a.ev.map(r=>`<tr><td>${t(r.k)}</td><td class="n">${tv(r.normal)}</td><td class="n${r.bad?' bad':''}">${tv(r.now)}</td></tr>`).join('')}</tbody></table><p class="verdict">${t(a.v)}</p></div>`:''}</li>`;}).join('');
+}
+$('feed').addEventListener('click',e=>{const b=e.target.closest('[data-a]'); if(!b) return; const id=+b.dataset.a; const a=alerts.find(x=>x.id===id); if(!a||!a.ev) return; openId = openId===id?null:id; renderFeed();});
+
+function render(){
+  if(weaverMode){ renderTiles(); }
+  const cards=loomsEl.querySelectorAll('.loom');
+  looms.forEach((L,i)=>{const c=cards[i],[k,txt]=st(L),p=c.querySelector('[data-p]'); p.className='pill '+k; p.textContent=txt;
+    c.querySelector('[data-n]').textContent=lname(L.no);
+    c.querySelector('[data-a]').textContent=L.ppm+' ppm'; c.querySelector('[data-b]').textContent=L.amp.toFixed(1)+' A'; c.querySelector('[data-d]').textContent=L.temp.toFixed(0)+' °C';
+    series(c.querySelector('[data-c]'),L.vib.slice(-90),1.6,k==='crit'?css('--crit'):k==='warn'?css('--warn'):k==='idle'?css('--idle'):css('--accent'),null,true);});
+  const L=looms[sel],[k,txt]=st(L);
+  $('dName').textContent=lname(L.no); const p=$('dPill'); p.className='pill '+k; p.textContent=txt;
+  $('dSub').textContent=t('loomSub',{hp:L.hp,ppm:L.basePpm});
+  $('dPpm').textContent=L.ppm; $('dCv').textContent=L.cv.toFixed(0); $('dAmp').textContent=L.amp.toFixed(2); $('dTemp').textContent=L.temp.toFixed(1); $('dRms').textContent=L.rms.toFixed(2);
+  $('dScore').textContent=L.score.toFixed(2); const r=$('ringVal'); r.style.strokeDashoffset=314.16*(1-Math.max(.03,L.score)); r.style.stroke=scoreCol(L.score);
+  series($('cVib'),L.vib,1.7,css('--accent'),L.baseRms*2.6+.06);
+  series($('cCur'),L.cur,9,css('--ok'),L.baseAmp);
+  $('clock').textContent=clock();
+  $('kRun').textContent=looms.filter(x=>x.state==='running'&&!(x.ev&&x.flag)).length+'/6';
+  const run=looms.reduce((s,x)=>s+x.runT,0), all=looms.reduce((s,x)=>s+x.allT,0); $('kEff').textContent=Math.round(run/Math.max(1,all)*100)+'%';
+  $('kAl').textContent=open.size; $('kAl').className='num'+(open.size?' crit':'');
+  $('kFab').textContent=fabric.toFixed(1)+' m'; $('kRs').textContent=inr(kwh*RATE); $('kKwh').textContent=t('k5s',{kwh:kwh.toFixed(1)});
+}
+
+/* ---------------- savings calculator ---------------- */
+const FIELDS=[
+  {g:'g_shed'},
+  {k:'looms',l:'f_looms',u:'@u_looms',v:24,min:1,max:200,st:1},
+  {k:'days',l:'f_days',u:'@u_days',v:26,min:1,max:31,st:1},
+  {k:'kit',l:'f_kit',u:'₹',v:5000,min:2000,max:15000,st:100},
+  {g:'g_thread'},
+  {k:'breaks',l:'f_breaks',u:'/day',v:4,min:0,max:20,st:1},
+  {k:'tBefore',l:'f_tBefore',u:'min',v:6,min:0,max:30,st:.5},
+  {k:'tAfter',l:'f_tAfter',u:'min',v:1,min:0,max:10,st:.5},
+  {k:'ppm',l:'f_ppm',u:'picks/min',v:180,min:80,max:300,st:5},
+  {k:'ppcm',l:'f_ppcm',u:'picks/cm',v:24,min:8,max:60,st:1,h:'h_ppcm'},
+  {k:'loss',l:'f_loss',u:'₹/m',v:25,min:0,max:200,st:1,h:'h_loss'},
+  {g:'g_elec'},
+  {k:'idleH',l:'f_idleH',u:'h',v:1.5,min:0,max:8,st:.25},
+  {k:'idleKw',l:'f_idleKw',u:'kW',v:.6,min:.1,max:2,st:.05},
+  {k:'cut',l:'f_cut',u:'%',v:60,min:0,max:100,st:5},
+  {k:'tariff',l:'f_tariff',u:'₹/kWh',v:8,min:3,max:15,st:.5},
+  {g:'g_motor'},
+  {k:'fails',l:'f_fails',u:'/yr',v:2,min:0,max:12,st:.5},
+  {k:'repair',l:'f_repair',u:'₹',v:4000,min:0,max:30000,st:500},
+  {k:'prevent',l:'f_prevent',u:'%',v:50,min:0,max:100,st:5}
+];
+const S={}; FIELDS.forEach(f=>{ if(f.k) S[f.k]=f.v; });
+const inEl=$('inputs');
+function buildInputs(){
+  let h='',opened=false;
+  FIELDS.forEach(f=>{ if(f.g){ if(opened) h+='</div>'; h+=`<div class="group"><h3>${t(f.g)}</h3>`; opened=true; return; }
+    h+=`<div class="field"><label for="f-${f.k}">${t(f.l)}</label><div class="in"><input id="f-${f.k}" data-k="${f.k}" inputmode="decimal" value="${S[f.k]}"><span>${tv(f.u)}</span></div>${f.h?`<small>${t(f.h)}</small>`:''}<input type="range" id="r-${f.k}" data-k="${f.k}" min="${f.min}" max="${f.max}" step="${f.st}" value="${S[f.k]}" aria-label="${t(f.l)}"></div>`; });
+  inEl.innerHTML = h+'</div>';
+}
+inEl.addEventListener('input',e=>{ const k=e.target.dataset.k; if(!k) return; let v=parseFloat(e.target.value); if(isNaN(v)) return; S[k]=v;
+  if(e.target.type==='range') $('f-'+k).value=v; else $('r-'+k).value=v; calc(); });
+$('reset').addEventListener('click',()=>{ FIELDS.forEach(f=>{ if(f.k){ S[f.k]=f.v; $('f-'+f.k).value=f.v; $('r-'+f.k).value=f.v; } }); calc(); });
+
+function calc(){
+  const mpm=S.ppm/(S.ppcm*100);
+  const fabM = S.looms*S.breaks*Math.max(0,S.tBefore-S.tAfter)*mpm*S.days;
+  const fab = fabM*S.loss;
+  const kwhM = S.looms*S.idleH*S.idleKw*(S.cut/100)*S.days;
+  const en = kwhM*S.tariff;
+  const rep = S.looms*S.fails*(S.prevent/100)*S.repair/12;
+  const tot=fab+en+rep, kit=S.looms*S.kit, pay= tot>0? kit/tot : Infinity;
+  $('rMonth').textContent=inr(tot);
+  $('rPay').textContent= isFinite(pay)? (pay<1? '< 1' : pay.toFixed(1)) : '—';
+  $('rYear').textContent=inr(tot*12-kit);
+  $('rLoom').textContent=inr(tot/Math.max(1,S.looms));
+  const items=[[t('b_fab'),fab,'--accent',t('b_fabS',{m:fabM.toFixed(0)})],[t('b_rep'),rep,'--warn',t('b_repS',{n:(S.looms*S.fails*S.prevent/100).toFixed(1)})],[t('b_en'),en,'--ok',kwhM.toFixed(0)+' kWh']];
+  const mx=Math.max(1,...items.map(i=>i[1]));
+  $('brk').innerHTML=items.map(([n,v,c,s])=>`<div class="brow"><span>${n}<br><small style="color:var(--ink-3);font-size:.72rem">${s}</small></span><span class="b"><i style="width:${v/mx*100}%;background:var(${c})"></i></span><b>${inr(v)}</b></div>`).join('');
+  const f2=(n,d=2)=>(+n).toLocaleString('en-IN',{maximumFractionDigits:d});
+  const opened = [...$('formula').querySelectorAll('details')].map(d=>d.open);
+  $('formula').innerHTML=`
+  <details${opened.length?(opened[0]?' open':''):' open'}><summary>${t('b_fab')} · ${inr(fab)}</summary><code>${t('x_speed')} = ${S.ppm} ÷ (${S.ppcm} × 100) = ${f2(mpm,3)} m/min
+${t('x_metres')} = ${S.looms} ${t('x_looms')} × ${S.breaks} ${t('x_breaks')} × (${S.tBefore} − ${S.tAfter}) min × ${f2(mpm,3)} m/min × ${S.days} ${t('x_days')} = ${f2(fabM,0)} m
+${t('x_saving')} = ${f2(fabM,0)} m × ₹${S.loss} = ${inr(fab)}</code></details>
+  <details${opened[1]?' open':''}><summary>${t('b_rep')} · ${inr(rep)}</summary><code>${S.looms} ${t('x_looms')} × ${S.fails} ${t('x_perYear')} × ${S.prevent}% ${t('x_prevented')} × ₹${f2(S.repair,0)} ÷ 12 ${t('x_months')} = ${inr(rep)}</code></details>
+  <details${opened[2]?' open':''}><summary>${t('b_en')} · ${inr(en)}</summary><code>${t('x_energy')} = ${S.looms} ${t('x_looms')} × ${S.idleH} h × ${S.idleKw} kW × ${S.cut}% × ${S.days} ${t('x_days')} = ${f2(kwhM,0)} kWh
+${t('x_saving')} = ${f2(kwhM,0)} kWh × ₹${S.tariff} = ${inr(en)}</code></details>
+  <details${opened[3]?' open':''}><summary>${t('x_payback')} · ${isFinite(pay)?pay.toFixed(1)+' '+t('x_months'):'—'}</summary><code>${t('x_kit')} = ${S.looms} × ₹${f2(S.kit,0)} = ${inr(kit)}
+${t('x_payback')} = ${inr(kit)} ÷ ${inr(tot)} ${t('x_perMonth')} = ${isFinite(pay)?pay.toFixed(1):'—'} ${t('x_months')}</code></details>`;
+  drawPay(tot,kit);
+}
+function drawPay(tot,kit){
+  const c=$('cPay'); if($('v-savings').hidden) return; const [x,w,h]=fit(c); x.clearRect(0,0,w,h);
+  const pts=[...Array(13)].map((_,m)=>tot*m-kit), lo=Math.min(...pts,0), hi=Math.max(...pts,1);
+  const L=54,Rr=10,T=10,B=22, X=m=>L+(w-L-Rr)*m/12, Y=v=>T+(h-T-B)*(1-(v-lo)/(hi-lo));
+  x.font='11px '+css('--num'); x.fillStyle=css('--ink-3'); x.strokeStyle=css('--line'); x.lineWidth=1;
+  [lo,0,hi].forEach(v=>{ x.beginPath(); x.moveTo(L,Y(v)); x.lineTo(w-Rr,Y(v)); x.stroke(); x.textAlign='right'; x.fillText((v<0?'−':'')+'₹'+Math.abs(v/1000).toFixed(0)+'k',L-6,Y(v)+4); });
+  x.textAlign='center'; [0,3,6,9,12].forEach(m=>x.fillText('M'+m,X(m),h-6));
+  for(let m=0;m<12;m++){ const b=pts[m+1]; x.fillStyle = b>=0? css('--ok') : css('--crit'); x.globalAlpha=.85;
+    const bw=(w-L-Rr)/12*.55, xc=(X(m)+X(m+1))/2, y0=Y(0), y1=Y(b); x.fillRect(xc-bw/2,Math.min(y0,y1),bw,Math.max(1,Math.abs(y1-y0))); }
+  x.globalAlpha=1;
+  x.strokeStyle=css('--ink-2'); x.setLineDash([4,4]); x.beginPath(); x.moveTo(L,Y(0)); x.lineTo(w-Rr,Y(0)); x.stroke(); x.setLineDash([]);
+}
+window.addEventListener('resize',()=>{ if(!$('v-savings').hidden) calc(); if(!$('v-history').hidden) drawHistory(); if(!$('v-listen').hidden) drawListen(); });
+
+/* ---------------- listen: acoustic pick detection ---------------- */
+const LS={sr:16000, data:null, isSample:true, name:'', res:null, ctx:null, src:null, t0:0, playing:false};
+function makeSample(){
+  const sr=16000, dur=20, N=sr*dur, a=new Float32Array(N); let seed=7; const r=()=>{seed=(seed*16807)%2147483647; return seed/2147483647;};
+  const per=60/180; let tp=0.15, k=0;
+  while(tp<dur){
+    let next=per*(1+(r()-.5)*.03), play=true;
+    if(tp>11 && tp<15){ next=per*(1+(r()-.5)*.35); if(k%3===1) play=false; }
+    if(tp>=15) break;
+    if(play){ const amp=.75+r()*.2, s0=Math.floor(tp*sr);
+      for(let i=0;i<sr*.09 && s0+i<N;i++){ const tt=i/sr; a[s0+i]+=amp*((r()*2-1)*Math.exp(-tt/.006)*.9 + Math.sin(2*Math.PI*980*tt)*Math.exp(-tt/.025)*.55 + Math.sin(2*Math.PI*2400*tt)*Math.exp(-tt/.01)*.25); } }
+    tp+=next; k++;
+  }
+  for(let i=0;i<N;i++){ const tt=i/sr, run = tt<15? 1 : Math.max(0,1-(tt-15)/0.8);
+    a[i]+= run*(.05*Math.sin(2*Math.PI*100*tt)+.03*(r()*2-1)) + .006*(r()*2-1); a[i]*=.8; }
+  return a;
+}
+function analyse(x,sr){
+  const hop=Math.round(sr*.005), F=Math.floor(x.length/hop), env=new Float32Array(F);
+  for(let f=0;f<F;f++){ let s=0; for(let i=0;i<hop;i++){ const v=x[f*hop+i]; s+=v*v; } env[f]=Math.sqrt(s/hop); }
+  // high-frequency emphasis: use first difference energy for sharper clacks
+  const sm=new Float32Array(F); for(let f=0;f<F;f++){ sm[f]=(env[f]+(env[f-1]||env[f])+(env[f+1]||env[f]))/3; }
+  const sorted=Float32Array.from(sm).sort(), q=p=>sorted[Math.min(F-1,Math.floor(p*F))];
+  const floor=q(.3), top=q(.985), thr=floor+.35*(top-floor), minGap=Math.round(.12/.005);
+  const picks=[]; let last=-1e9;
+  for(let f=1;f<F-1;f++){ if(sm[f]>thr && sm[f]>=sm[f-1] && sm[f]>=sm[f+1] && f-last>=minGap){ picks.push(f*.005); last=f; } }
+  const dur=x.length/sr, iv=[]; for(let i=1;i<picks.length;i++) iv.push(picks[i]-picks[i-1]);
+  const base=iv.length? iv.slice(0,Math.max(5,Math.min(20,iv.length))).slice().sort((a,b)=>a-b)[Math.floor(Math.min(iv.length,Math.max(5,Math.min(20,iv.length)))/2)] : 0;
+  const segs=[]; let first=null;
+  const add=(s,e,type)=>{ const L=segs[segs.length-1]; if(L && L.type===type && s-L.e<base*1.2) L.e=e; else segs.push({s,e,type}); if(first===null) first=s; };
+  if(base){
+    for(let i=0;i<iv.length;i++){ const d=iv[i], s=picks[i], e=picks[i+1];
+      if(d>3*base) add(s,e,'stop'); else if(d>1.5*base || d<.7*base) add(s,e,'break'); }
+    const tail=dur-picks[picks.length-1]; if(tail>3*base) add(picks[picks.length-1],dur,'stop');
+  }
+  const rates=picks.slice(1).map((p,i)=>({t:p, r:60/iv[i]}));
+  const verdict = !base ? 'vOk' : segs.some(s=>s.type==='stop') ? 'vStop' : segs.length ? 'vThread' : 'vOk';
+  return {picks, base, ppm: base? 60/base:0, segs, first, rates, verdict, dur, env:sm};
+}
+function loadData(x,sr,isSample,name){
+  stopPlay(); LS.data=x; LS.sr=sr; LS.isSample=isSample; LS.name=name||''; LS.res=analyse(x,sr); $('lsErr').hidden=true; listenText(); drawListen();
+}
+function listenText(){
+  if(!LS.res) return;
+  $('lsSrc').textContent = LS.isSample? t('lsSrcSample') : LS.name+' · '+LS.res.dur.toFixed(0)+' s';
+  $('lsPlayTxt').textContent = LS.playing? t('lsPause'):t('lsPlay');
+  const R=LS.res; $('lsPicks').textContent=R.picks.length; $('lsAvg').textContent=Math.round(R.ppm)+' /min';
+  $('lsFirst').textContent = R.first!==null ? '0:'+String(Math.floor(R.first)).padStart(2,'0')+'.'+Math.floor((R.first%1)*10) : '—';
+  $('lsVerdict').textContent=t(R.verdict); $('lsVcard').className='card verdict-card '+(R.verdict==='vOk'?'ok':'bad');
+}
+function drawListen(){
+  if($('v-listen').hidden || !LS.res) return;
+  const R=LS.res, x=LS.data, dur=R.dur, ph = LS.playing? Math.min(dur,(LS.ctx.currentTime-LS.t0)) : null;
+  { const c=$('cWave'), [g,w,h]=fit(c); g.clearRect(0,0,w,h); const X=t=>t/dur*w;
+    R.segs.forEach(s=>{ g.fillStyle = s.type==='stop'? css('--idle') : css('--crit'); g.globalAlpha=.16; g.fillRect(X(s.s),0,X(s.e)-X(s.s),h); g.globalAlpha=1; });
+    const mid=h/2+6, amp=(h-24)/2, step=x.length/w; let mx=0; for(let i=0;i<x.length;i+=7) mx=Math.max(mx,Math.abs(x[i])); mx=mx||1;
+    g.fillStyle=css('--ink-3');
+    for(let px=0;px<w;px++){ let lo=0,hi=0; const a=Math.floor(px*step), b=Math.min(x.length,Math.floor((px+1)*step)); for(let i=a;i<b;i+=2){ const v=x[i]/mx; if(v<lo)lo=v; if(v>hi)hi=v; }
+      const played = ph!==null && px<X(ph); g.fillStyle = played? css('--accent') : css('--ink-3'); g.globalAlpha = played? .9 : .55; g.fillRect(px,mid-hi*amp,1,Math.max(1,(hi-lo)*amp)); }
+    g.globalAlpha=1;
+    R.picks.forEach(p=>{ g.fillStyle=css('--accent'); g.fillRect(X(p)-1,2,2,9); });
+    R.segs.forEach(s=>{ g.fillStyle = s.type==='stop'? css('--idle') : css('--crit'); g.fillRect(X(s.s),h-4,X(s.e)-X(s.s),4); });
+    if(ph!==null){ g.fillStyle=css('--ink'); g.fillRect(X(ph),0,2,h); } }
+  { const c=$('cRate'), [g,w,h]=fit(c); g.clearRect(0,0,w,h);
+    const top=Math.max(60,R.ppm*1.8), Lp=40, X=t=>Lp+t/dur*(w-Lp-22), Y=v=>h-18-Math.min(1,v/top)*(h-28);
+    g.font='11px '+css('--num'); g.fillStyle=css('--ink-3'); g.textAlign='right'; g.strokeStyle=css('--line');
+    [0,top/2,top].forEach(v=>{ g.beginPath(); g.moveTo(Lp,Y(v)); g.lineTo(w-8,Y(v)); g.stroke(); g.fillText(Math.round(v),Lp-6,Y(v)+4); });
+    g.textAlign='center'; for(let s=0;s<=dur;s+=Math.max(1,Math.round(dur/10))) g.fillText(s+'s',X(s),h-4);
+    if(R.ppm){ g.fillStyle=css('--ok'); g.globalAlpha=.15; g.fillRect(Lp,Y(R.ppm*1.1),w-Lp-8,Y(R.ppm*.9)-Y(R.ppm*1.1)); g.globalAlpha=1; }
+    R.segs.forEach(s=>{ g.fillStyle = s.type==='stop'? css('--idle') : css('--crit'); g.globalAlpha=.12; g.fillRect(X(s.s),0,X(s.e)-X(s.s),h-18); g.globalAlpha=1; });
+    g.beginPath(); R.rates.forEach((p,i)=>{ const yy=Y(Math.min(top,p.r)); i? g.lineTo(X(p.t),yy):g.moveTo(X(p.t),yy); });
+    g.strokeStyle=css('--accent'); g.lineWidth=1.8; g.stroke();
+    R.rates.forEach(p=>{ const bad=R.segs.some(s=>p.t>s.s && p.t<=s.e+1e-6); g.beginPath(); g.arc(X(p.t),Y(Math.min(top,p.r)),bad?3.2:2,0,7); g.fillStyle= bad? css('--crit'):css('--accent'); g.fill(); });
+    if(ph!==null){ g.fillStyle=css('--ink'); g.fillRect(X(ph),0,2,h-18); } }
+}
+function stopPlay(){ try{ LS.src && LS.src.stop(); }catch(e){} LS.playing=false; $('lsPlayIcon').setAttribute('d','M7 4l13 8-13 8z'); $('lsPlayTxt').textContent=t('lsPlay'); drawListen(); }
+$('lsPlay').addEventListener('click',()=>{
+  if(LS.playing){ stopPlay(); return; }
+  try{
+    LS.ctx = LS.ctx || new (window.AudioContext||window.webkitAudioContext)();
+    LS.ctx.resume && LS.ctx.resume();
+    const buf=LS.ctx.createBuffer(1,LS.data.length,LS.sr); buf.copyToChannel ? buf.copyToChannel(LS.data,0) : buf.getChannelData(0).set(LS.data);
+    const s=LS.ctx.createBufferSource(); s.buffer=buf; s.connect(LS.ctx.destination); s.onended=()=>{ if(LS.src===s) stopPlay(); };
+    LS.src=s; LS.t0=LS.ctx.currentTime; s.start(); LS.playing=true;
+    $('lsPlayIcon').setAttribute('d','M6 4h4v16H6zM14 4h4v16h-4z'); $('lsPlayTxt').textContent=t('lsPause');
+    const tick=()=>{ if(!LS.playing) return; drawListen(); requestAnimationFrame(tick); }; tick();
+  }catch(e){ stopPlay(); }
+});
+$('lsSampleBtn').addEventListener('click',()=>loadData(makeSample(),16000,true));
+$('lsFile').addEventListener('change',async e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  try{
+    const ab=await f.arrayBuffer(); const ctx=new (window.OfflineAudioContext||window.webkitOfflineAudioContext)(1,1,16000);
+    const ad=await new Promise((res,rej)=>{ const p=ctx.decodeAudioData(ab,res,rej); if(p&&p.then) p.then(res,rej); });
+    const ch=ad.getChannelData(0), ratio=ad.sampleRate/16000, maxS=Math.min(ad.duration,90), n=Math.floor(maxS*16000), out=new Float32Array(n);
+    for(let i=0;i<n;i++){ const j=Math.floor(i*ratio); let s=0,c=0; for(let k=0;k<Math.max(1,Math.floor(ratio));k++){ if(j+k<ch.length){ s+=ch[j+k]; c++; } } out[i]=c?s/c:0; }
+    loadData(out,16000,false,f.name.length>28?f.name.slice(0,25)+'…':f.name);
+  }catch(err){ $('lsErr').textContent=t('lsFileErr'); $('lsErr').hidden=false; }
+  e.target.value='';
+});
+loadData(makeSample(),16000,true);
+
+/* ---------------- monthly records (sample data) ---------------- */
+const LOC={en:'en-IN',ta:'ta-IN',hi:'hi-IN',te:'te-IN',ml:'ml-IN',kn:'kn-IN'};
+const INST=6, RATE_M=6.8, FIXED=155000, KIT=120000, REPAIR=4000;
+const HIST=(()=>{
+  let s=20251; const r=()=>{ s=(s*1103515245+12345)%2147483648; return s/2147483648; };
+  const D=[25,22,25,26,24,25,23,25,26,26,25,26];
+  return D.map((d,i)=>{
+    const ph = i<INST?0 : i===INST?1 : 2;
+    const eff = [.775+r()*.03, .81, .855+r()*.015][ph];
+    const faulty = Math.round([880+r()*220, 600, 270+r()*70][ph]);
+    const idle = Math.round([480+r()*90, 360, 185+r()*35][ph]);
+    const brk = [3+Math.round(r()*2), 3, Math.round(r()*1.4)][ph];
+    const prod = Math.round(24*72*d*eff);
+    const run = 24*16*d*eff*0.75, kwh = Math.round(run+idle), bill = kwh*8;
+    const good = prod-faulty, income = good*RATE_M;
+    const cost = bill + FIXED + brk*REPAIR + (ph===1?KIT:0);
+    const down = brk*9 + [38,26,12][ph];
+    return {date:new Date(2025,9+i,1), d, prod, faulty, idle, kwh, bill, brk, down, income, cost, pl:income-cost, inst:ph===1, after:ph===2, before:ph===0};
+  });
+})();
+const mLabel=(m,opt)=>new Intl.DateTimeFormat(LOC[LANG]||'en-IN',opt||{month:'short',year:'numeric'}).format(m.date);
+const nIN=v=>Math.round(v).toLocaleString('en-IN');
+const plStr=v=>(v>=0?'+':'−')+'₹'+nIN(Math.abs(v));
+let mA=HIST.length-2, mB=HIST.length-1;
+
+function deltaHTML(cur,prev,goodUp,fmt){
+  const d=cur-prev, pct=prev? d/Math.abs(prev)*100:0, up=d>=0;
+  const cls = goodUp===null?'neutral':(up===goodUp?(up?'up-good':'down-good'):(up?'up-bad':'down-bad'));
+  return `<span class="delta ${cls}">${up?'▲':'▼'} ${fmt(Math.abs(d))} (${Math.abs(pct).toFixed(0)}%) <span>${t('hVsPrev')}</span></span>`;
+}
+function renderHistory(){
+  if(!$('hcards')) return;
+  const L=HIST[HIST.length-1], P=HIST[HIST.length-2];
+  $('hIntro').textContent=t('hIntro',{from:mLabel(HIST[0]),to:mLabel(L),inst:mLabel(HIST[INST])});
+  const cards=[
+    ['c_profit',plStr(L.pl),L.pl>=0?'pos':'neg',deltaHTML(L.pl,P.pl,true,v=>'₹'+nIN(v))],
+    ['c_kwh',nIN(L.kwh)+' kWh','',deltaHTML(L.kwh,P.kwh,null,v=>nIN(v)+' kWh')],
+    ['c_prod',nIN(L.prod)+' m','',deltaHTML(L.prod,P.prod,true,v=>nIN(v)+' m')],
+    ['c_faulty',nIN(L.faulty)+' m','',deltaHTML(L.faulty,P.faulty,false,v=>nIN(v)+' m')]];
+  $('hcards').innerHTML=cards.map(([k,v,c,dh])=>`<div class="card hc"><span class="label">${t(k)} · ${mLabel(L)}</span><b class="${c}">${v}</b>${dh}</div>`).join('');
+  const avg=(arr,f)=>arr.reduce((s,m)=>s+m[f],0)/arr.length, B=HIST.filter(m=>m.before), A=HIST.filter(m=>m.after);
+  $('ba').innerHTML=[['avgProfit','pl',v=>plStr(v)],['avgIdle','idle',v=>nIN(v)+' kWh'],['avgFaulty','faulty',v=>nIN(v)+' m']].map(([k,f,fm])=>
+    `<div><span class="label">${t(k)}</span><div class="pair"><span><em>${t('before')}</em><b>${fm(avg(B,f))}</b></span><span class="arrow">→</span><span class="after"><em>${t('after')}</em><b>${fm(avg(A,f))}</b></span></div></div>`).join('');
+  const opts=HIST.map((m,i)=>`<option value="${i}">${mLabel(m,{month:'long',year:'numeric'})}</option>`).join('');
+  $('mA').innerHTML=opts; $('mB').innerHTML=opts; $('mA').value=mA; $('mB').value=mB;
+  renderCompare(); renderTable(); drawHistory();
+}
+const ROWS=[
+  ['col_prod',m=>m.prod,v=>nIN(v)+' m',true],['col_faulty',m=>m.faulty,v=>nIN(v)+' m',false],['col_kwh',m=>m.kwh,v=>nIN(v)+' kWh',null],
+  ['col_kwhm',m=>m.kwh/m.prod,v=>v.toFixed(3)+' kWh',false],['col_idle',m=>m.idle,v=>nIN(v)+' kWh',false],['col_bill',m=>m.bill,v=>'₹'+nIN(v),null],
+  ['col_brk',m=>m.brk,v=>nIN(v),false],['col_down',m=>m.down,v=>nIN(v)+' h',false],['col_income',m=>m.income,v=>'₹'+nIN(v),true],
+  ['col_cost',m=>m.cost,v=>'₹'+nIN(v),false],['col_pl',m=>m.pl,v=>plStr(v),true]];
+function renderCompare(){
+  const A=HIST[mA], B=HIST[mB];
+  $('cmpT').innerHTML=`<thead><tr><th></th><th>${mLabel(A)}</th><th>${mLabel(B)}</th><th>${t('diff')}</th></tr></thead><tbody>`+
+    ROWS.map(([k,g,f,goodUp])=>{ const a=g(A), b=g(B), d=b-a, up=d>=0;
+      const cls = Math.abs(d)<1e-9||goodUp===null?'':(up===goodUp?'pos':'neg');
+      const ds = k==='col_pl'? plStr(d) : (up?'+':'−')+f(Math.abs(d)).replace(/^\+|^−/,'');
+      return `<tr><td>${t(k)}</td><td>${f(a)}</td><td>${f(b)}</td><td class="${cls}">${ds}</td></tr>`; }).join('')+'</tbody>';
+}
+function renderTable(){
+  const cols=['col_month','col_prod','col_faulty','col_kwh','col_idle','col_bill','col_brk','col_down','col_income','col_cost','col_pl'];
+  $('allT').innerHTML=`<thead><tr>${cols.map(c=>`<th>${t(c)}</th>`).join('')}</tr></thead><tbody>`+
+    HIST.slice().reverse().map(m=>`<tr class="${m.inst?'inst':''}"><td>${mLabel(m)}${m.inst?`<span class="mk">● ${t('installed')}</span>`:''}</td><td>${nIN(m.prod)} m</td><td>${nIN(m.faulty)} m</td><td>${nIN(m.kwh)}</td><td>${nIN(m.idle)}</td><td>₹${nIN(m.bill)}</td><td>${m.brk}</td><td>${m.down} h</td><td>₹${nIN(m.income)}</td><td>₹${nIN(m.cost)}</td><td class="${m.pl>=0?'pos':'neg'}">${plStr(m.pl)}</td></tr>`).join('')+'</tbody>';
+}
+function drawHistory(){
+  if($('v-history').hidden) return;
+  const lab=m=>mLabel(m,{month:'short'});
+  // profit / loss bars
+  { const c=$('cPL'), [x,w,h]=fit(c); x.clearRect(0,0,w,h);
+    const vals=HIST.map(m=>m.pl), lo=Math.min(0,...vals)*1.1, hi=Math.max(0,...vals)*1.15;
+    const Lp=58,Rp=8,T=18,B=24, n=HIST.length, bw=(w-Lp-Rp)/n, Y=v=>T+(h-T-B)*(1-(v-lo)/(hi-lo));
+    x.font='11px '+css('--num'); x.fillStyle=css('--ink-3'); x.strokeStyle=css('--line'); x.lineWidth=1; x.textAlign='right';
+    [lo,lo/2,0,hi/2,hi].forEach(v=>{ x.beginPath(); x.moveTo(Lp,Y(v)); x.lineTo(w-Rp,Y(v)); x.stroke(); x.fillText((v<0?'−':'')+'₹'+Math.abs(v/1000).toFixed(0)+'k',Lp-6,Y(v)+4); });
+    const ix=Lp+bw*INST; x.strokeStyle=css('--accent'); x.setLineDash([4,4]); x.beginPath(); x.moveTo(ix,T-6); x.lineTo(ix,h-B); x.stroke(); x.setLineDash([]);
+    x.fillStyle=css('--accent'); x.textAlign='left'; x.font='600 11px '+css('--ui'); x.fillText('● '+t('installed'),ix+4,T-4);
+    HIST.forEach((m,i)=>{ const xc=Lp+bw*i+bw/2, y0=Y(0), y1=Y(m.pl); x.fillStyle=m.pl>=0?css('--ok'):css('--crit');
+      const rw=bw*.6; x.fillRect(xc-rw/2,Math.min(y0,y1),rw,Math.max(1,Math.abs(y1-y0)));
+      x.fillStyle=css('--ink-3'); x.font='11px '+css('--ui'); x.textAlign='center'; x.fillText(lab(m),xc,h-6); });
+    x.strokeStyle=css('--ink-2'); x.beginPath(); x.moveTo(Lp,Y(0)); x.lineTo(w-Rp,Y(0)); x.stroke(); }
+  // electricity stacked bars
+  { const c=$('cKwh'), [x,w,h]=fit(c); x.clearRect(0,0,w,h);
+    const hi=Math.max(...HIST.map(m=>m.kwh))*1.1;
+    const Lp=52,Rp=8,T=10,B=24, n=HIST.length, bw=(w-Lp-Rp)/n, Y=v=>T+(h-T-B)*(1-v/hi);
+    x.font='11px '+css('--num'); x.fillStyle=css('--ink-3'); x.strokeStyle=css('--line'); x.lineWidth=1; x.textAlign='right';
+    [0,hi/3,hi*2/3,hi].forEach(v=>{ x.beginPath(); x.moveTo(Lp,Y(v)); x.lineTo(w-Rp,Y(v)); x.stroke(); x.fillText((v/1000).toFixed(1)+'k',Lp-6,Y(v)+4); });
+    HIST.forEach((m,i)=>{ const xc=Lp+bw*i+bw/2, rw=bw*.6, used=m.kwh-m.idle;
+      x.fillStyle=css('--accent'); x.fillRect(xc-rw/2,Y(used),rw,Y(0)-Y(used));
+      x.fillStyle=css('--warn'); x.fillRect(xc-rw/2,Y(m.kwh),rw,Y(used)-Y(m.kwh));
+      x.fillStyle=css('--ink-3'); x.font='11px '+css('--ui'); x.textAlign='center'; x.fillText(lab(m),xc,h-6); });
+    const ix=Lp+bw*INST; x.strokeStyle=css('--accent'); x.setLineDash([4,4]); x.beginPath(); x.moveTo(ix,T); x.lineTo(ix,h-B); x.stroke(); x.setLineDash([]); }
+}
+$('mA').addEventListener('change',e=>{ mA=+e.target.value; renderCompare(); });
+$('mB').addEventListener('change',e=>{ mB=+e.target.value; renderCompare(); });
+$('copyT').addEventListener('click',()=>{
+  const rows=[...$('allT').querySelectorAll('tr')].map(tr=>[...tr.children].map(td=>td.textContent.replace(/●.*$/,'').trim()).join('\t')).join('\n');
+  const done=()=>{ const b=$('copyT'); b.textContent=t('copied'); setTimeout(()=>b.textContent=t('copy'),1600); };
+  const fallback=()=>{ const r=document.createRange(); r.selectNodeContents($('allT')); const s=getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try{ navigator.clipboard.writeText(rows).then(done,fallback); }catch(e){ fallback(); }
+});
+
+/* ---------------- seed a realistic morning ---------------- */
+looms[3].state='idle'; looms[3].ev='idle'; looms[3].evT=10; looms[3].idleT=10;
+looms[4].ev='bearing'; looms[4].evT=6; looms[4].wear=.4;
+for(let k=0;k<80;k++){ looms.forEach(L=>step(L,.1)); }
+alerts.push({id:++aid,t:'07:52',no:'02',sev:'ok',k:'a_threadOk'});
+const seeded={id:++aid,t:'07:47',no:'02',sev:'crit',k:'a_thread',
+  ev:[R('m_ppm','176 /min','118 /min',true),R('m_cv','2%','34%',true),R('cur','2.9 A','2.9 A',false),R('m_temp','≈46 °C','45 °C',false)],v:'v_thread'};
+alerts.push(seeded); if(openId===null) openId=seeded.id;
+kwh=1.2; fabric=2.6; simMin=8*60;
+
+applyLang();
+show(({'#savings':'savings','#history':'history','#listen':'listen'})[location.hash]||'monitor');
+
+let last=performance.now(), acc=0;
+function frame(now){
+  const dt=Math.min(.25,(now-last)/1000); last=now;
+  if(!document.hidden && !$('v-monitor').hidden){
+    acc+=dt;
+    while(acc>=.1){ acc-=.1; looms.forEach(L=>step(L,.1)); simMin+=.1;
+      if($('auto').checked){ since+=.1; if(since>nextAuto){ since=0; nextAuto=rnd(18,28);
+        const free=looms.filter(L=>!L.ev&&L.state==='running'&&L.id!==sel);
+        if(free.length) trigger(free[Math.floor(Math.random()*free.length)],['thread','thread','overload','heat','idle','bearing'][Math.floor(Math.random()*6)]); } } }
+    render();
+  }
+  requestAnimationFrame(frame);
+}
+render(); requestAnimationFrame(frame);
+})();
+</script>
